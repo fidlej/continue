@@ -91,7 +91,7 @@ def _estim_kt_p(num_zeros, num_ones):
     Assumes a memory-less model:
         P(num_zeros, num_ones) = theta**num_ones * (1 - theta)**num_zeros
 
-        with Dirichlet prior P(theta).
+        with Dirichlet(1/2.0,1/2.0) prior P(theta).
     The resulting Bayesian mixture in a "Krichevski-Trofimov" estimator.
     """
     a_mul = 1.0
