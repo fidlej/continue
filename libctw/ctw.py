@@ -76,16 +76,6 @@ def _estim_p(num_zeros, num_ones):
     return _estim_kt_p(num_zeros, num_ones)
 
 
-def _estim_zero_kt_p(num_zeros, num_ones):
-    p = 0.5 * _estim_kt_p(num_zeros, num_ones)
-    if num_zeros == 0:
-        p += 0.25
-    if num_ones == 0:
-        p += 0.25
-
-    return p
-
-
 def _estim_kt_p(num_zeros, num_ones):
     """Estimates the probability of the given numbers.
     Assumes a memory-less model:
