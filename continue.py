@@ -40,16 +40,19 @@ def main():
     model = ctw.create_model()
     model.see(seq)
 
+    probs = []
     probability = 1.0
     sys.stdout.write("%s -> " % seq)
     for i in xrange(options.num_predicted_bits):
         bit, bit_p = modeling.advance(model)
+        probs.append(bit_p)
         probability *= bit_p
         sys.stdout.write(str(bit))
         sys.stdout.flush()
 
     print
-    print "with P = %f" % probability
+    probs_info = " * ".join("%.2f" % p for p in probs)
+    print "with P = %f = %s" % (probability, probs_info)
 
 
 if __name__ == "__main__":
