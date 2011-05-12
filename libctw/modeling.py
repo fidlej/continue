@@ -2,7 +2,7 @@
 
 def advance(model):
     """Generates deterministically the next bit.
-    Return a (bit, prediction_probability) pair.
+    Returns a (bit, prediction_probability) pair.
     """
     one_p = model.predict_one()
     assert 0 <= one_p <= 1.0
