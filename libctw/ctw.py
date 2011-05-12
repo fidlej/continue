@@ -25,6 +25,9 @@ class _CtwModel:
         self.seen += seq
 
     def predict_one(self):
+        """Computes the conditional probability
+        P(next_bit=1|seen_bits).
+        """
         #TODO: reuse previous computations
         return (_calc_p("", self.seen + "1") /
                 float(_calc_p("", self.seen)))
