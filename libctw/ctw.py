@@ -82,7 +82,7 @@ def _estim_p(num_zeros, num_ones):
 
 
 def _estim_determ_p(num_zeros, num_ones):
-    """An estimtor that beliefs just in
+    """An estimator that beliefs just in
     deterministic memory-less models.
     """
     p = 0.0
