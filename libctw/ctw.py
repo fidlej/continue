@@ -50,6 +50,7 @@ def _calc_p(context, seq):
         # if the 0context and 1context don't fit before it in the sequence.
         # The "Extending the Context-Tree Weighting Method" paper names
         # the p_uncovered as P^{epsilon s}.
+        assert _estim_p(1, 0) == _estim_p(0, 1)
         p_uncovered = 0.5
 
     # The CTW estimate is the average
@@ -76,7 +77,20 @@ def _count_followers(context, seq):
 
 
 def _estim_p(num_zeros, num_ones):
-    return _estim_kt_p(num_zeros, num_ones)
+    return _estim_determ_p(num_zeros, num_ones)
+    #return _estim_kt_p(num_zeros, num_ones)
+
+
+def _estim_determ_p(num_zeros, num_ones):
+    """An estimtor that beliefs just in
+    deterministic memory-less models.
+    """
+    p = 0.0
+    if num_zeros == 0:
+        p += 0.5
+    if num_ones == 0:
+        p += 0.5
+    return p
 
 
 def _estim_kt_p(num_zeros, num_ones):
