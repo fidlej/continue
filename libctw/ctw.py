@@ -21,7 +21,7 @@ def create_model(deterministic=False):
 
 class _CtwModel:
     def __init__(self, estimator):
-        self.estimator = estimator
+        self.contexted = _Contexted(estimator)
         self.seen = ""
 
     def see(self, seq):
@@ -35,36 +35,41 @@ class _CtwModel:
         P(next_bit=1|seen_bits).
         """
         #TODO: reuse previous computations
-        return (_calc_p("", self.seen + "1", self.estimator) /
-                float(_calc_p("", self.seen, self.estimator)))
+        return (self.contexted.calc_p("", self.seen + "1") /
+                float(self.contexted.calc_p("", self.seen)))
 
 
-def _calc_p(context, seq, estimator):
-    """Estimates the probability of some bits from the given sequence.
-    Only the bits following the context
-    are considered by the probability.
-    """
-    num_zeros, num_ones = _count_followers(context, seq)
-    if num_zeros == 0 and num_ones == 0:
-        return 1.0
+class _Contexted:
+    def __init__(self, estimator):
+        self.estimator = estimator
 
-    p0context = _calc_p("0" + context, seq, estimator)
-    p1context = _calc_p("1" + context, seq, estimator)
-    p_uncovered = 1.0
-    if seq.startswith(context):
-        # A bit will be uncovered by the child models,
-        # if the 0context and 1context don't fit before it in the sequence.
-        # The "Extending the Context-Tree Weighting Method" paper names
-        # the p_uncovered as P^{epsilon s}.
-        assert estimator(1, 0) == estimator(0, 1)
-        p_uncovered = 0.5
+    def calc_p(self, context, seq):
+        """Estimates the probability of some bits from the given sequence.
+        Only the bits following the context
+        are considered by the probability.
+        """
+        num_zeros, num_ones = _count_followers(context, seq)
+        if num_zeros == 0 and num_ones == 0:
+            return 1.0
 
-    # The CTW estimate is the average
-    # of the this context model and the model of its children.
-    # The recursive averaging prefers simpler models.
-    result = 0.5 * (estimator(num_zeros, num_ones) + p0context * p1context *
-            p_uncovered)
-    return result
+        p0context = self.calc_p("0" + context, seq)
+        p1context = self.calc_p("1" + context, seq)
+        p_uncovered = 1.0
+        if seq.startswith(context):
+            # A bit will be uncovered by the child models,
+            # if the 0context and 1context don't fit before it in the sequence.
+            # The "Extending the Context-Tree Weighting Method" paper names
+            # the p_uncovered as P^{epsilon s}.
+            assert self.estimator(1, 0) == self.estimator(0, 1)
+            p_uncovered = 0.5
+
+        # The CTW estimate is the average
+        # of the this context model and the model of its children.
+        # The recursive averaging prefers simpler models.
+        result = 0.5 * (
+                self.estimator(num_zeros, num_ones) +
+                p0context * p1context * p_uncovered)
+        return result
 
 
 def _count_followers(context, seq):

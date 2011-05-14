@@ -43,19 +43,19 @@ def test_count_followers():
 
 def test_calc_p():
     for estimator in ESTIMATORS:
-        eq_(ctw._calc_p("", "", estimator), 1.0)
-        eq_(ctw._calc_p("", "0", estimator), 0.5)
-        eq_(ctw._calc_p("", "1", estimator), 0.5)
-        eq_(ctw._calc_p("", "01", estimator),
-                ctw._calc_p("", "10", estimator))
-        eq_(ctw._calc_p("", "11", estimator),
-                ctw._calc_p("", "00", estimator))
+        calc_p = ctw._Contexted(estimator).calc_p
+        eq_(calc_p("", ""), 1.0)
+        eq_(calc_p("", "0"), 0.5)
+        eq_(calc_p("", "1"), 0.5)
+        eq_(calc_p("", "01"), calc_p("", "10"))
+        eq_(calc_p("", "11"), calc_p("", "00"))
 
 
 def test_calc_p_sum():
     for estimator in ESTIMATORS:
+        calc_p = ctw._Contexted(estimator).calc_p
         def p_func(seq):
-            return ctw._calc_p("", seq, estimator)
+            return calc_p("", seq)
 
         _check_p_sum(p_func)
 
