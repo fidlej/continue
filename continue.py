@@ -20,7 +20,9 @@ DEFAULTS = {
 def _parse_args():
     parser = optparse.OptionParser(__doc__)
     parser.add_option("-n", dest="num_predicted_bits", type="int",
-            help="The number of bits to predict (default=%(num_predicted_bits)s)" % DEFAULTS)
+            help="the number of bits to predict (default=%(num_predicted_bits)s)" % DEFAULTS)
+    parser.add_option("-d", "--deterministic", action="store_true",
+            help="assume deterministic sequence generator models")
     parser.set_defaults(**DEFAULTS)
 
     options, args = parser.parse_args()
@@ -37,7 +39,7 @@ def _parse_args():
 def main():
     options, seq = _parse_args()
 
-    model = ctw.create_model()
+    model = ctw.create_model(options.deterministic)
     model.see(seq)
 
     probs = []

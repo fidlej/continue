@@ -4,6 +4,8 @@ import itertools
 
 from libctw import ctw
 
+ESTIMATORS = [ctw._estim_kt_p, ctw._estim_determ_p]
+
 def test_estim_kt_p():
     # The tabulated values are from "Reflections on CTW".
     eq_(ctw._estim_kt_p(0, 1), 0.5)
@@ -17,20 +19,13 @@ def test_estim_kt_p():
     eq_(ctw._estim_kt_p(0, 0), 1.0)
 
 
-def test_estim_kt_p_sum():
-    def p_func(seq):
-        counts = ctw._count_followers("", seq)
-        return ctw._estim_kt_p(*counts)
+def test_estimator_p_sum():
+    for estimator in ESTIMATORS:
+        def p_func(seq):
+            counts = ctw._count_followers("", seq)
+            return estimator(*counts)
 
-    _check_p_sum(p_func)
-
-
-def test_estim_p_sum():
-    def p_func(seq):
-        counts = ctw._count_followers("", seq)
-        return ctw._estim_p(*counts)
-
-    _check_p_sum(p_func)
+        _check_p_sum(p_func)
 
 
 def test_count_followers():
@@ -47,18 +42,22 @@ def test_count_followers():
 
 
 def test_calc_p():
-    eq_(ctw._calc_p("", ""), 1.0)
-    eq_(ctw._calc_p("", "0"), 0.5)
-    eq_(ctw._calc_p("", "1"), 0.5)
-    eq_(ctw._calc_p("", "01"), ctw._calc_p("", "10"))
-    eq_(ctw._calc_p("", "11"), ctw._calc_p("", "00"))
+    for estimator in ESTIMATORS:
+        eq_(ctw._calc_p("", "", estimator), 1.0)
+        eq_(ctw._calc_p("", "0", estimator), 0.5)
+        eq_(ctw._calc_p("", "1", estimator), 0.5)
+        eq_(ctw._calc_p("", "01", estimator),
+                ctw._calc_p("", "10", estimator))
+        eq_(ctw._calc_p("", "11", estimator),
+                ctw._calc_p("", "00", estimator))
 
 
 def test_calc_p_sum():
-    def p_func(seq):
-        return ctw._calc_p("", seq)
+    for estimator in ESTIMATORS:
+        def p_func(seq):
+            return ctw._calc_p("", seq, estimator)
 
-    _check_p_sum(p_func)
+        _check_p_sum(p_func)
 
 
 def _check_p_sum(p_func):
