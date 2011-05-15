@@ -14,7 +14,7 @@ import optparse
 from libctw import ctw, modeling, byting
 
 DEFAULTS = {
-        "num_predicted_bits": 10,
+        "num_predicted_bits": 100,
         }
 
 def _parse_args():
@@ -36,6 +36,10 @@ def _parse_args():
         parser.error("Expecting a sequence of 0s and 1s.")
 
     return options, seq
+
+
+def _format_products(parts):
+    return " * ".join("%.2f" % p for p in parts)
 
 
 def main():
@@ -65,7 +69,10 @@ def main():
     if options.bytes:
         print "%s -> %s" % (input_seq, byting.to_bytes(bits))
 
-    probs_info = " * ".join("%.2f" % p for p in probs)
+    if len(probs) > 10:
+        probs_info = _format_products(probs[:9]) + " * ..."
+    else:
+        probs_info = _format_products(probs)
     print "with P = %f = %s" % (probability, probs_info)
 
 
