@@ -53,7 +53,7 @@ def main():
         seq = byting.to_bits(input_seq)
         num_predicted_bits *= 8
 
-    model = ctw.create_model(options.estimator != "determ", options.depth)
+    model = ctw.create_model(options.estimator == "determ", options.depth)
     model.see(seq)
 
     probs = []

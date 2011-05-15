@@ -55,6 +55,10 @@ class _CtModel:
         """Computes the conditional probability
         P(Next_bit=1|history).
         """
+        if self.root.pw == 0:
+            raise ValueError(
+                    "Impossible history. Try non-deterministic prior.")
+
         bit = 1
         context = self._get_context()
         path = self._get_context_path(context)
