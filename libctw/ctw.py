@@ -1,119 +1,98 @@
-"""
-A Context-Tree Weighting model.
-
-Resource:
-1) The Context-Tree Weighting Method: Basic Properties
-2) Reflections on "The Context-Tree Weighting Method: Basic Properties"
-http://www.sps.ele.tue.nl/members/F.M.J.Willems/RESEARCH_files/CTW/ResearchCTW.htm
-"""
-
-import math
 
 
 def create_model(deterministic=False):
     if deterministic:
-        estimator = _estim_determ_p
+        estim_update = _deterministic_estim_update
     else:
-        estimator = _estim_kt_p
+        estim_update = _kt_estim_update
 
-    return _CtwModel(estimator)
+    return _CtModel(estim_update)
 
 
-class _CtwModel:
-    def __init__(self, estimator):
-        self.contexted = _Contexted(estimator)
-        self.seen = ""
+class _CtModel:
+    def __init__(self, estim_update):
+        self.estim_update = estim_update
+        self.history = []
+        self.root = _Node()
 
     def see(self, seq):
-        #TODO: use an algorithm without the need
-        # to store the seen sequence.
-        # Only the counts are important for a context-based model.
-        self.seen += seq
+        for c in seq:
+            bit = 1 if c == "1" else 0
+            self._see_bit(bit)
+
+    def _see_bit(self, bit):
+        #TODO: implement
+        pass
 
     def predict_one(self):
         """Computes the conditional probability
-        P(next_bit=1|seen_bits).
+        P(Next_bit=1|history).
         """
-        #TODO: reuse previous computations
-        return (self.contexted.calc_p("", self.seen + "1") /
-                float(self.contexted.calc_p("", self.seen)))
+        context = self.history
+        path = _get_context_path(self.root, context)
 
-
-class _Contexted:
-    def __init__(self, estimator):
-        self.estimator = estimator
-
-    def calc_p(self, context, seq):
-        """Estimates the probability of some bits from the given sequence.
-        Only the bits following the context
-        are considered by the probability.
-        """
-        num_zeros, num_ones = _count_followers(context, seq)
-        if num_zeros == 0 and num_ones == 0:
-            return 1.0
-
-        p0context = self.calc_p("0" + context, seq)
-        p1context = self.calc_p("1" + context, seq)
-        p_uncovered = 1.0
-        if seq.startswith(context):
-            # A bit will be uncovered by the child models,
-            # if the 0context and 1context don't fit before it in the sequence.
-            # The "Extending the Context-Tree Weighting Method" paper names
-            # the p_uncovered as P^{epsilon s}.
-            assert self.estimator(1, 0) == self.estimator(0, 1)
-            p_uncovered = 0.5
-
-        # The CTW estimate is the average
-        # of the this context model and the model of its children.
-        # The recursive averaging prefers simpler models.
-        result = 0.5 * (
-                self.estimator(num_zeros, num_ones) +
-                p0context * p1context * p_uncovered)
-        return result
-
-
-def _count_followers(context, seq):
-    # Efficiency is ignored here.
-    # Better algorithms exist.
-    num_zeros = 0
-    num_ones = 0
-    for i in xrange(len(seq) - len(context)):
-        if seq[i:].startswith(context):
-            if seq[i + len(context)] == "0":
-                num_zeros += 1
+        child_pw = 1.0
+        for step, (context_bit, node) in enumerate(
+                zip(reversed(context), reversed(path))):
+            p_estim = node.p_estim * self.estim_update(1, node.counts)
+            other_child = node.childen[1 - context_bit]
+            if other_child is None:
+                p_other_child = 1.0
             else:
-                num_ones += 1
+                p_other_child = other_child.pw
 
-    return num_zeros, num_ones
+            p_uncovered = 1.0
+            # Assumes unlimited tree depth
+            if self.history.strartswith(context[step:]):
+                p_uncovered = 0.5
 
+            child_pw = 0.5 * (p_estim +
+                child_pw * p_other_child * p_uncovered)
 
-def _estim_determ_p(num_zeros, num_ones):
-    """An estimator that beliefs just in
-    deterministic memory-less models.
-    """
-    p = 0.0
-    if num_zeros == 0:
-        p += 0.5
-    if num_ones == 0:
-        p += 0.5
-    return p
+        return child_pw
 
 
-def _estim_kt_p(num_zeros, num_ones):
-    """Estimates the probability of the given numbers.
-    Assumes a memory-less model:
-        P(num_zeros, num_ones) = theta**num_ones * (1 - theta)**num_zeros
+def _get_context_path(root, context):
+    path = [root]
+    node = root
+    for bit in reversed(context):
+        node = node.children[bit]
+        if node is None:
+            node = _Node()
+        path.append(node)
 
-        with Dirichlet(1/2.0,1/2.0) prior P(theta).
-    The resulting Bayesian mixture is a "Krichevski-Trofimov" estimator.
-    """
-    a_mul = 1.0
-    for i in xrange(num_zeros):
-        a_mul *= i + 0.5
+    return path
 
-    b_mul = 1.0
-    for i in xrange(num_ones):
-        b_mul *= i + 0.5
 
-    return a_mul * b_mul / float(math.factorial(num_zeros + num_ones))
+class _Node:
+    def __init__(self):
+        self.p_estim = 1.0
+        self.pw = 1.0
+        self.counts = [0, 0]
+        self.children = [None, None]
+
+
+def _deterministic_estim_update(new_bit, counts):
+    new_counts = counts[:]
+    new_counts[new_bit] += 1
+    if new_counts[0] > 0 and new_counts[1] > 0:
+        return 0.0
+
+    p_new = 0.0
+    if new_counts[0] == 0:
+        p_new += 0.5
+    if new_counts[1] == 0:
+        p_new += 0.5
+
+    p_old = 0.0
+    if counts[0] == 0:
+        p_old += 0.5
+    if counts[1] == 0:
+        p_old += 0.5
+
+    return p_new / float(p_old)
+
+
+def _kt_estim_update(new_bit, counts):
+    return (counts[new_bit] + 0.5) / (sum(counts) + 1)
 
