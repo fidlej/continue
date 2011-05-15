@@ -73,6 +73,8 @@ class _CtModel:
         """Returns the probability of the bit uncovered
         by the subcontext children.
         """
+        # A bit is uncovered, if the history
+        # starts with the subcontext.
         if self.history[:len(subcontext)] == subcontext:
             return 0.5
         return 1.0
