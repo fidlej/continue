@@ -50,6 +50,17 @@ def test_max_depth():
     eq_(model.root.pw, naive_ctw._estim_kt_p(0, 2))
 
 
+def test_max_depth_sum():
+    for seq_len in xrange(10):
+        total = 0.0
+        for seq in iter_all_seqs(seq_len):
+            model = ctw.create_model(max_depth=10)
+            model.see(seq)
+            total += model.root.pw
+
+        eq_(total, 1.0)
+
+
 def iter_all_seqs(seq_len):
     for seq in itertools.product(["0", "1"], repeat=seq_len):
         yield "".join(seq)
