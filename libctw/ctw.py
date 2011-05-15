@@ -21,44 +21,74 @@ class _CtModel:
             self._see_bit(bit)
 
     def _see_bit(self, bit):
-        #TODO: implement
-        pass
+        """Updates the counts and precomputed probabilities
+        on the context path.
+        """
+        context = self.history
+        path = _get_context_path(self.root, context, save_nodes=True)
+
+        for step, node in enumerate(reversed(path)):
+            p0context = _child_pw(node, 0)
+            p1context = _child_pw(node, 1)
+            p_uncovered = self._get_p_uncovered(context[step:])
+
+            node.p_estim *= self.estim_update(bit, node.counts)
+            node.pw = 0.5 * (node.p_estim +
+                p0context * p1context * p_uncovered)
+            node.counts[bit] += 1
+
+        self.history.append(bit)
 
     def predict_one(self):
         """Computes the conditional probability
         P(Next_bit=1|history).
         """
+        bit = 1
         context = self.history
         path = _get_context_path(self.root, context)
 
         child_pw = 1.0
-        for step, (context_bit, node) in enumerate(
-                zip(reversed(context), reversed(path))):
-            p_estim = node.p_estim * self.estim_update(1, node.counts)
-            other_child = node.childen[1 - context_bit]
-            if other_child is None:
-                p_other_child = 1.0
+        for step, (child_bit, node) in enumerate(
+                zip(reversed(context + [None]), reversed(path))):
+            p_estim = node.p_estim * self.estim_update(bit, node.counts)
+            if child_bit is None:
+                child_pw = p_estim
             else:
-                p_other_child = other_child.pw
+                p_other_child_pw = _child_pw(node, 1 - child_bit)
 
-            p_uncovered = 1.0
-            if self.history.strartswith(context[step:]):
-                p_uncovered = 0.5
+                p_uncovered = self._get_p_uncovered(context[step:])
+                child_pw = 0.5 * (p_estim +
+                    child_pw * p_other_child_pw * p_uncovered)
 
-            child_pw = 0.5 * (p_estim +
-                child_pw * p_other_child * p_uncovered)
+        return child_pw / float(self.root.pw)
 
-        return child_pw
+    def _get_p_uncovered(self, subcontext):
+        """Returns the probability of the bit uncovered
+        by the subcontext children.
+        """
+        if self.history[:len(subcontext)] == subcontext:
+            return 0.5
+        return 1.0
 
 
-def _get_context_path(root, context):
+def _child_pw(node, child_bit):
+    child = node.children[child_bit]
+    if child is None:
+        return 1.0
+    return child.pw
+
+
+def _get_context_path(root, context, save_nodes=False):
     path = [root]
     node = root
     for bit in reversed(context):
-        node = node.children[bit]
-        if node is None:
-            node = _Node()
-        path.append(node)
+        child = node.children[bit]
+        if child is None:
+            child = _Node()
+            if save_nodes:
+                node.children[bit] = child
+        path.append(child)
+        node = child
 
     return path
 
@@ -69,6 +99,12 @@ class _Node:
         self.pw = 1.0
         self.counts = [0, 0]
         self.children = [None, None]
+
+    def __repr__(self):
+        return "Node" + str(dict(
+            p_estim=self.p_estim,
+            pw=self.pw,
+            counts=self.counts))
 
 
 def _determ_estim_update(new_bit, counts):
@@ -93,5 +129,8 @@ def _determ_estim_update(new_bit, counts):
 
 
 def _kt_estim_update(new_bit, counts):
-    return (counts[new_bit] + 0.5) / (sum(counts) + 1)
+    """Computes P(Next_bit=new_bit|counts)
+    for the the Krichevski-Trofimov estimator.
+    """
+    return (counts[new_bit] + 0.5) / float((sum(counts) + 1))
 
