@@ -52,10 +52,11 @@ class _CtModel:
         bit = 1
         context = self.history
         path = _get_context_path(self.root, context)
+        assert len(path) == len(context) + 1
 
-        new_pw = 1.0
+        new_pw = None
         for step, (child_bit, node) in enumerate(
-                zip(reversed(context + [None]), reversed(path))):
+                zip([None] + context, reversed(path))):
             p_estim = node.p_estim * self.estim_update(bit, node.counts)
             if child_bit is None:
                 new_pw = p_estim

@@ -27,8 +27,7 @@ def test_see():
 
 
 def test_predict_one():
-    #TODO: increase the seq_len
-    seq_len = 2
+    seq_len = 10
     for determ in [False, True]:
         for seq in iter_all_seqs(seq_len):
             model = ctw.create_model(determ)
@@ -36,9 +35,8 @@ def test_predict_one():
             for c in seq:
                 model.see(c)
                 verifier.see(c)
-                #TODO: remove print
-                print model.history
-                eq_(model.predict_one(), verifier.predict_one())
+                eq_float_(model.predict_one(), verifier.predict_one(),
+                        precision=15)
 
 
 def iter_all_seqs(seq_len):

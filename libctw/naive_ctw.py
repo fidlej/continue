@@ -25,16 +25,12 @@ class _CtwModel:
         self.seen = ""
 
     def see(self, seq):
-        #TODO: use an algorithm without the need
-        # to store the seen sequence.
-        # Only the counts are important for a context-based model.
         self.seen += seq
 
     def predict_one(self):
         """Computes the conditional probability
         P(next_bit=1|seen_bits).
         """
-        #TODO: reuse previous computations
         return (self.contexted.calc_p("", self.seen + "1") /
                 float(self.contexted.calc_p("", self.seen)))
 
