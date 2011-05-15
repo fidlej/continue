@@ -19,7 +19,7 @@ class _CtModel:
     def __init__(self, estim_update):
         self.estim_update = estim_update
         self.history = []
-        self.root = _Node()
+        self.root = self._create_node([])
 
     def see(self, seq):
         for c in seq:
@@ -31,16 +31,15 @@ class _CtModel:
         on the context path.
         """
         context = self.history
-        path = _get_context_path(self.root, context, save_nodes=True)
+        path = self._get_context_path(context, save_nodes=True)
 
-        for step, node in enumerate(reversed(path)):
+        for node in reversed(path):
             p0context = _child_pw(node, 0)
             p1context = _child_pw(node, 1)
-            p_uncovered = self._get_p_uncovered(context[step:])
 
             node.p_estim *= self.estim_update(bit, node.counts)
             node.pw = 0.5 * (node.p_estim +
-                p0context * p1context * p_uncovered)
+                p0context * p1context * node.p_uncovered)
             node.counts[bit] += 1
 
         self.history.append(bit)
@@ -51,21 +50,18 @@ class _CtModel:
         """
         bit = 1
         context = self.history
-        path = _get_context_path(self.root, context)
+        path = self._get_context_path(context)
         assert len(path) == len(context) + 1
 
         new_pw = None
-        for step, (child_bit, node) in enumerate(
-                zip([None] + context, reversed(path))):
+        for child_bit, node in zip([None] + context, reversed(path)):
             p_estim = node.p_estim * self.estim_update(bit, node.counts)
             if child_bit is None:
                 new_pw = p_estim
             else:
                 p_other_child_pw = _child_pw(node, 1 - child_bit)
-
-                p_uncovered = self._get_p_uncovered(context[step:])
                 new_pw = 0.5 * (p_estim +
-                    new_pw * p_other_child_pw * p_uncovered)
+                    new_pw * p_other_child_pw * node.p_uncovered)
 
         return new_pw / float(self.root.pw)
 
@@ -79,6 +75,26 @@ class _CtModel:
             return 0.5
         return 1.0
 
+    def _create_node(self, context):
+        return _Node(self._get_p_uncovered(context))
+
+    def _get_context_path(self, context, save_nodes=False):
+        """Returns a path from the root to the start of the context.
+        """
+        path = [self.root]
+        node = self.root
+        for i, bit in enumerate(reversed(context)):
+            child = node.children[bit]
+            if child is None:
+                subcontext = context[-(i + 1):]
+                child = self._create_node(subcontext)
+                if save_nodes:
+                    node.children[bit] = child
+            path.append(child)
+            node = child
+
+        return path
+
 
 def _child_pw(node, child_bit):
     child = node.children[child_bit]
@@ -87,25 +103,11 @@ def _child_pw(node, child_bit):
     return child.pw
 
 
-def _get_context_path(root, context, save_nodes=False):
-    path = [root]
-    node = root
-    for bit in reversed(context):
-        child = node.children[bit]
-        if child is None:
-            child = _Node()
-            if save_nodes:
-                node.children[bit] = child
-        path.append(child)
-        node = child
-
-    return path
-
-
 class _Node:
-    def __init__(self):
+    def __init__(self, p_uncovered):
         self.p_estim = 1.0
         self.pw = 1.0
+        self.p_uncovered = p_uncovered
         self.counts = [0, 0]
         self.children = [None, None]
 
@@ -113,6 +115,7 @@ class _Node:
         return "Node" + str(dict(
             p_estim=self.p_estim,
             pw=self.pw,
+            p_uncovered=self.p_uncovered,
             counts=self.counts))
 
 
