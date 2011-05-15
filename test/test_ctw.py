@@ -54,7 +54,7 @@ def test_max_depth_sum():
     for seq_len in xrange(10):
         total = 0.0
         for seq in iter_all_seqs(seq_len):
-            model = ctw.create_model(max_depth=10)
+            model = ctw.create_model(max_depth=8)
             model.see(seq)
             total += model.root.pw
 
