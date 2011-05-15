@@ -2,7 +2,7 @@
 
 def create_model(deterministic=False):
     if deterministic:
-        estim_update = _deterministic_estim_update
+        estim_update = _determ_estim_update
     else:
         estim_update = _kt_estim_update
 
@@ -42,7 +42,6 @@ class _CtModel:
                 p_other_child = other_child.pw
 
             p_uncovered = 1.0
-            # Assumes unlimited tree depth
             if self.history.strartswith(context[step:]):
                 p_uncovered = 0.5
 
@@ -72,7 +71,7 @@ class _Node:
         self.children = [None, None]
 
 
-def _deterministic_estim_update(new_bit, counts):
+def _determ_estim_update(new_bit, counts):
     new_counts = counts[:]
     new_counts[new_bit] += 1
     if new_counts[0] > 0 and new_counts[1] > 0:
