@@ -15,14 +15,17 @@ from libctw import ctw, modeling, byting
 
 DEFAULTS = {
         "num_predicted_bits": 100,
+        "estimator": "kt",
         }
 
 def _parse_args():
     parser = optparse.OptionParser(__doc__)
     parser.add_option("-n", dest="num_predicted_bits", type="int",
             help="the number of bits to predict (default=%(num_predicted_bits)s)" % DEFAULTS)
-    parser.add_option("-d", "--deterministic", action="store_true",
-            help="assume deterministic sequence generator models")
+    parser.add_option("-d", "--depth", type="int",
+            help="limit max depth of the suffix tree model")
+    parser.add_option("-e", "--estimator", choices=["kt", "determ"],
+            help="use Krichevski-Trofimov or deterministic prior [kt|determ] (default=%(estimator)s)" % DEFAULTS)
     parser.add_option("-b", "--bytes", action="store_true",
             help="accept and predict a sequence of bytes")
     parser.set_defaults(**DEFAULTS)
@@ -50,7 +53,7 @@ def main():
         seq = byting.to_bits(input_seq)
         num_predicted_bits *= 8
 
-    model = ctw.create_model(options.deterministic)
+    model = ctw.create_model(options.estimator != "determ", options.depth)
     model.see(seq)
 
     probs = []
