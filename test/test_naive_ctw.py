@@ -2,7 +2,7 @@
 from nose.tools import eq_
 import itertools
 
-from libctw import ctw
+from libctw import naive_ctw as ctw
 
 ESTIMATORS = [ctw._estim_kt_p, ctw._estim_determ_p]
 
