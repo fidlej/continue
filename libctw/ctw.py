@@ -6,18 +6,19 @@ Joel Veness, Kee Siong Ng, Marcus Hutter, William Uther, David Silver
 http://jveness.info/software/default.html
 """
 
-def create_model(deterministic=False):
+def create_model(deterministic=False, max_depth=None):
     if deterministic:
         estim_update = _determ_estim_update
     else:
         estim_update = _kt_estim_update
 
-    return _CtModel(estim_update)
+    return _CtModel(estim_update, max_depth)
 
 
 class _CtModel:
-    def __init__(self, estim_update):
+    def __init__(self, estim_update, max_depth=None):
         self.estim_update = estim_update
+        self.max_depth = max_depth
         self.history = []
         self.root = self._create_node([])
 
@@ -30,18 +31,24 @@ class _CtModel:
         """Updates the counts and precomputed probabilities
         on the context path.
         """
-        context = self.history
+        context = self._get_context()
         path = self._get_context_path(context, save_nodes=True)
 
-        for node in reversed(path):
-            p0context = _child_pw(node, 0)
-            p1context = _child_pw(node, 1)
-
+        for i, node in enumerate(reversed(path)):
             node.p_estim *= self.estim_update(bit, node.counts)
-            node.pw = 0.5 * (node.p_estim +
-                p0context * p1context * node.p_uncovered)
             node.counts[bit] += 1
 
+            # No weighting is used, if the node has no children.
+            if i == 0:
+                node.pw = node.p_estim
+            else:
+                p0context = _child_pw(node, 0)
+                p1context = _child_pw(node, 1)
+                node.pw = 0.5 * (node.p_estim +
+                    p0context * p1context * node.p_uncovered)
+
+        # Note that it is enough to keep just the first and the last
+        # max_depth bits of history.
         self.history.append(bit)
 
     def predict_one(self):
@@ -49,7 +56,7 @@ class _CtModel:
         P(Next_bit=1|history).
         """
         bit = 1
-        context = self.history
+        context = self._get_context()
         path = self._get_context_path(context)
         assert len(path) == len(context) + 1
 
@@ -68,12 +75,27 @@ class _CtModel:
     def _get_p_uncovered(self, subcontext):
         """Returns the probability of the bit uncovered
         by the subcontext children.
+
+        The "The context-tree weighting method: Extensions" paper
+        uses "has a tail" wording for subcontexts with an uncovered bit.
         """
+        if self.max_depth is not None and len(subcontext) == self.max_depth:
+            return 1.0
+
         # A bit is uncovered, if the history
         # starts with the subcontext.
         if self.history[:len(subcontext)] == subcontext:
             return 0.5
         return 1.0
+
+    def _get_context(self):
+        """Returns the recent context.
+        """
+        context = self.history
+        if self.max_depth is not None:
+            context = context[len(context) - self.max_depth:]
+            assert len(context) <= self.max_depth
+        return context
 
     def _create_node(self, context):
         return _Node(self._get_p_uncovered(context))

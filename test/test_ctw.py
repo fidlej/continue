@@ -27,7 +27,7 @@ def test_see():
 
 
 def test_predict_one():
-    seq_len = 10
+    seq_len = 8
     for determ in [False, True]:
         for seq in iter_all_seqs(seq_len):
             model = ctw.create_model(determ)
@@ -39,9 +39,21 @@ def test_predict_one():
                         precision=15)
 
 
+def test_max_depth():
+    model = ctw.create_model(max_depth=0)
+    eq_(model.root.pw, 1.0)
+    model.see("1")
+    eq_(model.root.p_estim, 0.5)
+    eq_(model.root.pw, model.root.p_estim)
+
+    model.see("1")
+    eq_(model.root.pw, naive_ctw._estim_kt_p(0, 2))
+
+
 def iter_all_seqs(seq_len):
     for seq in itertools.product(["0", "1"], repeat=seq_len):
         yield "".join(seq)
+
 
 def _check_estim_update(estim_update, estimator):
     for seq_len in xrange(10):
