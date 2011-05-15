@@ -1,4 +1,10 @@
+"""An implementation of efficient CTW model updating.
 
+The code is inspired by the CTW implementation for MC-AIXI:
+"A Monte-Carlo AIXI Approximation"
+Joel Veness, Kee Siong Ng, Marcus Hutter, William Uther, David Silver
+http://jveness.info/software/default.html
+"""
 
 def create_model(deterministic=False):
     if deterministic:
@@ -47,20 +53,20 @@ class _CtModel:
         context = self.history
         path = _get_context_path(self.root, context)
 
-        child_pw = 1.0
+        new_pw = 1.0
         for step, (child_bit, node) in enumerate(
                 zip(reversed(context + [None]), reversed(path))):
             p_estim = node.p_estim * self.estim_update(bit, node.counts)
             if child_bit is None:
-                child_pw = p_estim
+                new_pw = p_estim
             else:
                 p_other_child_pw = _child_pw(node, 1 - child_bit)
 
                 p_uncovered = self._get_p_uncovered(context[step:])
-                child_pw = 0.5 * (p_estim +
-                    child_pw * p_other_child_pw * p_uncovered)
+                new_pw = 0.5 * (p_estim +
+                    new_pw * p_other_child_pw * p_uncovered)
 
-        return child_pw / float(self.root.pw)
+        return new_pw / float(self.root.pw)
 
     def _get_p_uncovered(self, subcontext):
         """Returns the probability of the bit uncovered
