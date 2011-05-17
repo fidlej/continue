@@ -27,6 +27,11 @@ class _CtModel:
             bit = 1 if c == "1" else 0
             self._see_bit(bit)
 
+    def add_given(self, bit):
+        # Note that it is enough to keep just the first and the last
+        # max_depth bits of history.
+        self.history.append(bit)
+
     def _see_bit(self, bit):
         """Updates the counts and precomputed probabilities
         on the context path.
@@ -47,9 +52,7 @@ class _CtModel:
                 node.pw = 0.5 * (node.p_estim +
                     p0context * p1context * node.p_uncovered)
 
-        # Note that it is enough to keep just the first and the last
-        # max_depth bits of history.
-        self.history.append(bit)
+        self.add_given(bit)
 
     def predict_one(self):
         """Computes the conditional probability

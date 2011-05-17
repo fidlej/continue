@@ -11,7 +11,7 @@ with P = 0.052825
 import sys
 import optparse
 
-from libctw import ctw, modeling, byting
+from libctw import ctw, modeling, byting, factored
 
 DEFAULTS = {
         "num_predicted_bits": 100,
@@ -45,15 +45,26 @@ def _format_products(parts):
     return " * ".join("%.2f" % p for p in parts)
 
 
+def _round_up(value, base):
+    whole = value - (value % base)
+    if whole < value:
+        whole += base
+    return whole
+
+
 def main():
     options, input_seq = _parse_args()
-    seq = input_seq
-    num_predicted_bits = options.num_predicted_bits
+    deterministic = options.estimator == "determ"
     if options.bytes:
         seq = byting.to_bits(input_seq)
-        num_predicted_bits *= 8
+        num_predicted_bits = _round_up(options.num_predicted_bits, 8)
+        model = factored.create_model(deterministic, options.depth,
+                num_factors=8)
+    else:
+        seq = input_seq
+        num_predicted_bits = options.num_predicted_bits
+        model = ctw.create_model(deterministic, options.depth)
 
-    model = ctw.create_model(options.estimator == "determ", options.depth)
     model.see(seq)
 
     probs = []
