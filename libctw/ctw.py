@@ -101,7 +101,7 @@ class _CtModel:
         context = self.history
         if self.max_depth is not None and len(context) > self.max_depth:
             context = context[len(context) - self.max_depth:]
-            assert len(context) <= self.max_depth
+            assert len(context) == self.max_depth
         return context
 
     def _create_node(self, context):
