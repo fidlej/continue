@@ -27,7 +27,10 @@ class _CtModel:
             bit = 1 if c == "1" else 0
             self._see_bit(bit)
 
-    def add_given(self, bit):
+    def add_history(self, bit):
+        """Adds a historic bit without affecting the model parameters.
+        The bit is not being predicted by the model.
+        """
         # Note that it is enough to keep just the first and the last
         # max_depth bits of history.
         self.history.append(bit)
@@ -52,7 +55,7 @@ class _CtModel:
                 node.pw = 0.5 * (node.p_estim +
                     p0context * p1context * node.p_uncovered)
 
-        self.add_given(bit)
+        self.add_history(bit)
 
     def predict_one(self):
         """Computes the conditional probability

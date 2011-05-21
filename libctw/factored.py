@@ -21,7 +21,7 @@ class _Factored:
                     ct.see(c)
                 else:
                     bit = 1 if c == "1" else 0
-                    ct.add_given(bit)
+                    ct.add_history(bit)
 
             self.offset = (self.offset + 1) % len(self.cts)
 
