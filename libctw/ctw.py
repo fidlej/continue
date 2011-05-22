@@ -17,6 +17,11 @@ def create_model(deterministic=False, max_depth=None, past=""):
 
 class _CtModel:
     def __init__(self, estim_update, max_depth=None, past=""):
+        """Creates a Context Tree model.
+
+        The given past is outside of the model scope.
+        Its P(past) is not bound to this model.
+        """
         self.estim_update = estim_update
         self.max_depth = max_depth
         self.history = []
@@ -34,7 +39,8 @@ class _CtModel:
 
     def add_history(self, bit):
         """Adds a historic bit without affecting the model parameters.
-        The bit is not being predicted by the model.
+        The bit is outside of the model scope.
+        Its P(bit) is not bound to this model.
         """
         # Note that it is enough to keep just the first and the last
         # max_depth bits of history.
