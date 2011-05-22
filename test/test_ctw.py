@@ -61,6 +61,21 @@ def test_max_depth_sum():
         eq_(total, 1.0)
 
 
+def test_max_depth_example():
+    # The calculated probablities are from the
+    # 'Reflections on "The Context-Tree Weighting Method: Basic Properties"'
+    # paper (figure 6 and 7).
+    model = ctw.create_model(max_depth=3, past="110")
+    model.see("0100110")
+    p_seq = model.root.pw
+    eq_float_(p_seq, 7/2048.0)
+
+    model.see("0")
+    p_seq2 = model.root.pw
+    eq_float_(p_seq2, 153/65536.0)
+
+
+
 def iter_all_seqs(seq_len):
     for seq in itertools.product(["0", "1"], repeat=seq_len):
         yield "".join(seq)

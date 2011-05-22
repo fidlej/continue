@@ -6,25 +6,30 @@ Joel Veness, Kee Siong Ng, Marcus Hutter, William Uther, David Silver
 http://jveness.info/software/default.html
 """
 
-def create_model(deterministic=False, max_depth=None):
+def create_model(deterministic=False, max_depth=None, past=""):
     if deterministic:
         estim_update = _determ_estim_update
     else:
         estim_update = _kt_estim_update
 
-    return _CtModel(estim_update, max_depth)
+    return _CtModel(estim_update, max_depth, past)
 
 
 class _CtModel:
-    def __init__(self, estim_update, max_depth=None):
+    def __init__(self, estim_update, max_depth=None, past=""):
         self.estim_update = estim_update
         self.max_depth = max_depth
         self.history = []
+        self.past_len = len(past)
+        for c in past:
+            self.add_history(_to_bit(c))
+
+        # Now the self is ready for use.
         self.root = self._create_node([])
 
     def see(self, seq):
         for c in seq:
-            bit = 1 if c == "1" else 0
+            bit = _to_bit(c)
             self._see_bit(bit)
 
     def add_history(self, bit):
@@ -92,6 +97,9 @@ class _CtModel:
         if self.max_depth is not None and len(subcontext) == self.max_depth:
             return 1.0
 
+        if len(subcontext) < self.past_len:
+            return 1.0
+
         # A bit is uncovered, if the history
         # starts with the subcontext.
         if self.history[:len(subcontext)] == subcontext:
@@ -133,6 +141,10 @@ def _child_pw(node, child_bit):
     if child is None:
         return 1.0
     return child.pw
+
+
+def _to_bit(symbol):
+    return 1 if symbol == "1" else 0
 
 
 class _Node:
