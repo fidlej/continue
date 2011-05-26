@@ -28,3 +28,6 @@ class _Factored:
     def predict_one(self):
         return self.cts[self.offset].predict_one()
 
+    def switch_context(self):
+        for ct in self.cts:
+            ct.switch_context()

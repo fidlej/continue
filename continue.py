@@ -28,6 +28,8 @@ def _parse_args():
             help="use Krichevski-Trofimov or deterministic prior [kt|determ] (default=%(estimator)s)" % DEFAULTS)
     parser.add_option("-b", "--bytes", action="store_true",
             help="accept and predict a sequence of bytes")
+    parser.add_option("-t", "--train",
+            help="train the model on the given data file")
     parser.set_defaults(**DEFAULTS)
 
     options, args = parser.parse_args()
@@ -64,6 +66,10 @@ def main():
         seq = input_seq
         num_predicted_bits = options.num_predicted_bits
         model = ctw.create_model(deterministic, options.depth)
+
+    if options.train:
+        model.see(open(options.train, "rb").read())
+        model.switch_context()
 
     model.see(seq)
 

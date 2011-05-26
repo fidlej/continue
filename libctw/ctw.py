@@ -26,16 +26,22 @@ class _CtModel:
         self.max_depth = max_depth
         self.history = []
         self.past_len = len(past)
+        self.switch_number = 0
         for c in past:
             self.add_history(_to_bit(c))
 
         # Now the self is ready for use.
-        self.root = self._create_node([])
+        self.root = _Node()
+        self._update_after_switch(self.root, [])
 
     def see(self, seq):
         for c in seq:
             bit = _to_bit(c)
             self._see_bit(bit)
+
+    def switch_context(self):
+        self.switch_number += 1
+        self.history = []
 
     def add_history(self, bit):
         """Adds a historic bit without affecting the model parameters.
@@ -121,9 +127,6 @@ class _CtModel:
             assert len(context) == self.max_depth
         return context
 
-    def _create_node(self, context):
-        return _Node(self._get_p_uncovered(context))
-
     def _get_context_path(self, context, save_nodes=False):
         """Returns a path from the root to the start of the context.
         """
@@ -132,14 +135,22 @@ class _CtModel:
         for i, bit in enumerate(reversed(context)):
             child = node.children[bit]
             if child is None:
-                subcontext = context[-(i + 1):]
-                child = self._create_node(subcontext)
+                child = _Node()
                 if save_nodes:
                     node.children[bit] = child
+
+            if child.seen_switch != self.switch_number:
+                subcontext = context[-(i + 1):]
+                self._update_after_switch(child, subcontext)
+
             path.append(child)
             node = child
 
         return path
+
+    def _update_after_switch(self, node, subcontext):
+        node.p_uncovered *= self._get_p_uncovered(subcontext)
+        node.seen_switch = self.switch_number
 
 
 def _child_pw(node, child_bit):
@@ -154,10 +165,11 @@ def _to_bit(symbol):
 
 
 class _Node:
-    def __init__(self, p_uncovered):
+    def __init__(self):
         self.p_estim = 1.0
         self.pw = 1.0
-        self.p_uncovered = p_uncovered
+        self.p_uncovered = 1.0
+        self.seen_switch = None
         self.counts = [0, 0]
         self.children = [None, None]
 
