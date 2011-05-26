@@ -75,6 +75,16 @@ def test_max_depth_example():
     eq_float_(p_seq2, 153/65536.0)
 
 
+def test_continue_example():
+    # A test of the documentation example:
+    # ./continue.py -n 10 01101
+    model = ctw.create_model()
+    model.see("01101")
+    p_given = model.root.pw
+    model.see("1011011011")
+    p_seq = model.root.pw
+    eq_float_(p_seq/float(p_given), 0.052825, precision=6)
+
 
 def iter_all_seqs(seq_len):
     for seq in itertools.product(["0", "1"], repeat=seq_len):
