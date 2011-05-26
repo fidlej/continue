@@ -29,5 +29,6 @@ class _Factored:
         return self.cts[self.offset].predict_one()
 
     def switch_context(self):
+        self.offset = 0
         for ct in self.cts:
             ct.switch_context()
