@@ -57,7 +57,7 @@ class _CtModel:
         on the context path.
         """
         context = self._get_context()
-        path = self._get_context_path(context, save_nodes=True)
+        path = _get_context_path(self.root, context, save_nodes=True)
 
         for i, node in enumerate(reversed(path)):
             node.p_estim *= self.estim_update(bit, node.counts)
@@ -67,6 +67,10 @@ class _CtModel:
             if i == 0:
                 node.pw = node.p_estim
             else:
+                if node.seen_switch != self.switch_number:
+                    node_context = context[i:]
+                    self._update_after_switch(node, node_context)
+
                 p0context = _child_pw(node, 0)
                 p1context = _child_pw(node, 1)
                 node.pw = 0.5 * (node.p_estim +
@@ -84,18 +88,24 @@ class _CtModel:
 
         bit = 1
         context = self._get_context()
-        path = self._get_context_path(context)
+        path = _get_context_path(self.root, context)
         assert len(path) == len(context) + 1
 
         new_pw = None
-        for child_bit, node in zip([None] + context, reversed(path)):
+        for i, (child_bit, node) in enumerate(
+                zip([None] + context, reversed(path))):
             p_estim = node.p_estim * self.estim_update(bit, node.counts)
             if child_bit is None:
                 new_pw = p_estim
             else:
+                p_uncovered = node.p_uncovered
+                if node.seen_switch != self.switch_number:
+                    node_context = context[i:]
+                    p_uncovered *= self._get_p_uncovered(node_context)
+
                 p_other_child_pw = _child_pw(node, 1 - child_bit)
                 new_pw = 0.5 * (p_estim +
-                    new_pw * p_other_child_pw * node.p_uncovered)
+                    new_pw * p_other_child_pw * p_uncovered)
 
         return new_pw / float(self.root.pw)
 
@@ -127,30 +137,27 @@ class _CtModel:
             assert len(context) == self.max_depth
         return context
 
-    def _get_context_path(self, context, save_nodes=False):
-        """Returns a path from the root to the start of the context.
-        """
-        path = [self.root]
-        node = self.root
-        for i, bit in enumerate(reversed(context)):
-            child = node.children[bit]
-            if child is None:
-                child = _Node()
-                if save_nodes:
-                    node.children[bit] = child
-
-            if child.seen_switch != self.switch_number:
-                subcontext = context[-(i + 1):]
-                self._update_after_switch(child, subcontext)
-
-            path.append(child)
-            node = child
-
-        return path
-
     def _update_after_switch(self, node, subcontext):
         node.p_uncovered *= self._get_p_uncovered(subcontext)
         node.seen_switch = self.switch_number
+
+
+def _get_context_path(root, context, save_nodes=False):
+    """Returns a path from the root to the start of the context.
+    """
+    path = [root]
+    node = root
+    for i, bit in enumerate(reversed(context)):
+        child = node.children[bit]
+        if child is None:
+            child = _Node()
+            if save_nodes:
+                node.children[bit] = child
+
+        path.append(child)
+        node = child
+
+    return path
 
 
 def _child_pw(node, child_bit):
