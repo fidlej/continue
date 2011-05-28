@@ -12,6 +12,6 @@ def advance(model):
     else:
         bit, p = "0", (1 - one_p)
 
-    model.see(bit)
+    model.see_generated(bit)
     return bit, p
 

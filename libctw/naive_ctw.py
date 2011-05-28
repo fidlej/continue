@@ -24,7 +24,7 @@ class _CtwModel:
         self.contexted = _Contexted(estimator)
         self.seen = ""
 
-    def see(self, seq):
+    def see_generated(self, seq):
         self.seen += seq
 
     def predict_one(self):

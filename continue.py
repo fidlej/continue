@@ -55,7 +55,7 @@ def _round_up(value, base):
 
 
 def _train_model(model, train_seq):
-    model.see(train_seq)
+    model.see_generated(train_seq)
     model.switch_history()
 
 
@@ -75,7 +75,7 @@ def main():
     if options.train:
         _train_model(model, options.train)
 
-    model.see(seq)
+    model.see_generated(seq)
 
     probs = []
     bits = ""

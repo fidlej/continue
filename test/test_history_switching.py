@@ -6,9 +6,9 @@ from libctw import ctw
 
 def test_children_respecting():
     model = ctw.create_model(deterministic=True)
-    model.see("01")
+    model.see_generated("01")
     model.switch_history()
-    model.see("0")
+    model.see_generated("0")
 
     p_estim = 0
     p_uncovered = 0.5 * 0.5

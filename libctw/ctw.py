@@ -35,10 +35,10 @@ class _CtModel:
         # Now the self is ready for use.
         self.root = _Node()
 
-    def see(self, seq):
+    def see_generated(self, seq):
         for c in seq:
             bit = _to_bit(c)
-            self._see_bit(bit)
+            self._see_generated_bit(bit)
 
     def switch_history(self):
         """Keeps the learned model, but starts
@@ -57,7 +57,7 @@ class _CtModel:
         # max_depth bits of history.
         self.history += bits
 
-    def _see_bit(self, bit):
+    def _see_generated_bit(self, bit):
         """Updates the counts and precomputed probabilities
         on the context path.
         """
