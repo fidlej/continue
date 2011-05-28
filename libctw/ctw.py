@@ -53,7 +53,7 @@ class _CtModel:
         The bit is outside of the model scope.
         Its P(bit) is not bound to this model.
         """
-        # Note that it is enough to keep just the first and the last
+        # Note that it is enough to keep just the last
         # max_depth bits of history.
         self.history += bits
 
@@ -64,13 +64,17 @@ class _CtModel:
         context = self._get_context()
         path = _get_context_path(self.root, context, save_nodes=True)
 
-        for i, node in enumerate(reversed(path)):
+        # If the node children are not updated by the bit,
+        # their model is later complemented with p_uncovered.
+        # The "THE CONTEXT-TREE WEIGHTING METHOD: EXTENSIONS" paper
+        # calls such nodes "has a tail".
+        # Our p_uncovered updating is OK with history switching
+        # and history adding by see_added().
+        path[-1].p_uncovered *= 0.5
+
+        for node in reversed(path):
             node.p_estim *= self.estim_update(bit, node.counts)
             node.counts[bit] += 1
-            # If the node children are not updated by the bit,
-            # their model is later complemented with p_uncovered.
-            if i == 0:
-                node.p_uncovered *= 0.5
 
             # No weighting is used, if the node has no children.
             if node.children == NO_CHILDREN:
