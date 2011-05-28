@@ -28,8 +28,6 @@ class _CtModel:
         self.estim_update = estim_update
         self.max_depth = max_depth
         self.history = []
-        self.past_len = len(past)
-        self.switch_number = 0
         self.see_added([_to_bit(c) for c in past])
 
         # Now the self is ready for use.
@@ -45,7 +43,6 @@ class _CtModel:
         with an empty history.
         It allows to switch between sequence examples.
         """
-        self.switch_number += 1
         self.history = []
 
     def see_added(self, bits):
@@ -67,15 +64,15 @@ class _CtModel:
         for i, node in enumerate(reversed(path)):
             node.p_estim *= self.estim_update(bit, node.counts)
             node.counts[bit] += 1
+            # If the node children are not updated by the bit,
+            # their model is later complemented with p_uncovered.
+            if i == 0:
+                node.p_uncovered *= 0.5
 
             # No weighting is used, if the node has no children.
             if node.children == NO_CHILDREN:
                 node.pw = node.p_estim
             else:
-                if node.seen_switch != self.switch_number:
-                    node_context = context[i:]
-                    self._update_after_switch(node, node_context)
-
                 p0context = _child_pw(node, 0)
                 p1context = _child_pw(node, 1)
                 node.pw = 0.5 * (node.p_estim +
@@ -106,9 +103,8 @@ class _CtModel:
                 new_pw = p_estim
             else:
                 p_uncovered = node.p_uncovered
-                if node.seen_switch != self.switch_number:
-                    node_context = context[i:]
-                    p_uncovered *= self._get_p_uncovered(node_context)
+                if i == 0:
+                    p_uncovered *= 0.5
 
                 # The context can be shorter than
                 # the existing tree depth, when switching history.
@@ -123,25 +119,6 @@ class _CtModel:
 
         return new_pw / float(self.root.pw)
 
-    def _get_p_uncovered(self, subcontext):
-        """Returns the probability of the bit uncovered
-        by the subcontext children.
-
-        The "The context-tree weighting method: Extensions" paper
-        uses "has a tail" wording for subcontexts with an uncovered bit.
-        """
-        if self.max_depth is not None and len(subcontext) == self.max_depth:
-            return 1.0
-
-        if len(subcontext) < self.past_len:
-            return 1.0
-
-        # A bit is uncovered, if the history
-        # starts with the subcontext.
-        if self.history[:len(subcontext)] == subcontext:
-            return 0.5
-        return 1.0
-
     def _get_context(self):
         """Returns the recent context.
         """
@@ -150,10 +127,6 @@ class _CtModel:
             context = context[len(context) - self.max_depth:]
             assert len(context) == self.max_depth
         return context
-
-    def _update_after_switch(self, node, subcontext):
-        node.p_uncovered *= self._get_p_uncovered(subcontext)
-        node.seen_switch = self.switch_number
 
 
 def _get_context_path(root, context, save_nodes=False):
@@ -190,7 +163,6 @@ class _Node:
         self.p_estim = 1.0
         self.pw = 1.0
         self.p_uncovered = 1.0
-        self.seen_switch = None
         self.counts = [0, 0]
         self.children = [None, None]
 
