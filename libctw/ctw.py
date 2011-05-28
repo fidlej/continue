@@ -88,6 +88,12 @@ class _CtModel:
             raise ValueError(
                     "Impossible history. Try non-deterministic prior.")
 
+        # The implementation does the following
+        # without making permanent changes by see_generated():
+        #     p_given = self.root.pw
+        #     see_generated(bit=1)
+        #     p_seq = self.root.pw
+        #     return p_seq / float(p_given)
         bit = 1
         context = self._get_context()
         path = _get_context_path(self.root, context)
