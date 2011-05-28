@@ -14,13 +14,12 @@ class _Factored:
         self.cts = cts
         self.offset = 0
 
-    def see_generated(self, seq):
-        for c in seq:
+    def see_generated(self, bits):
+        for bit in bits:
             for i, ct in enumerate(self.cts):
                 if i == self.offset:
-                    ct.see_generated(c)
+                    ct.see_generated([bit])
                 else:
-                    bit = 1 if c == "1" else 0
                     ct.see_added([bit])
 
             self.offset = (self.offset + 1) % len(self.cts)

@@ -24,8 +24,8 @@ class _CtwModel:
         self.contexted = _Contexted(estimator)
         self.seen = ""
 
-    def see_generated(self, seq):
-        self.seen += seq
+    def see_generated(self, bits):
+        self.seen += "".join(("1" if bit else "0") for bit in bits)
 
     def predict_one(self):
         """Computes the conditional probability

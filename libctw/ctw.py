@@ -6,7 +6,7 @@ Joel Veness, Kee Siong Ng, Marcus Hutter, William Uther, David Silver
 http://jveness.info/software/default.html
 """
 
-def create_model(deterministic=False, max_depth=None, past=""):
+def create_model(deterministic=False, max_depth=None, past=()):
     if deterministic:
         estim_update = _determ_estim_update
     else:
@@ -19,7 +19,7 @@ NO_CHILDREN = [None, None]
 
 
 class _CtModel:
-    def __init__(self, estim_update, max_depth=None, past=""):
+    def __init__(self, estim_update, max_depth=None, past=()):
         """Creates a Context Tree model.
 
         The given past is outside of the model scope.
@@ -28,14 +28,17 @@ class _CtModel:
         self.estim_update = estim_update
         self.max_depth = max_depth
         self.history = []
-        self.see_added([_to_bit(c) for c in past])
+        self.see_added(past)
 
         # Now the self is ready for use.
         self.root = _Node()
 
-    def see_generated(self, seq):
-        for c in seq:
-            bit = _to_bit(c)
+    def see_generated(self, bits):
+        """Updates the model parameters
+        after seeing next generated bits.
+        The model should also generate them with high probability.
+        """
+        for bit in bits:
             self._see_generated_bit(bit)
 
     def switch_history(self):
@@ -91,7 +94,7 @@ class _CtModel:
         # The implementation does the following
         # without making permanent changes by see_generated():
         #     p_given = self.root.pw
-        #     see_generated(bit=1)
+        #     see_generated(bits=[1])
         #     p_seq = self.root.pw
         #     return p_seq / float(p_given)
         bit = 1
@@ -158,10 +161,6 @@ def _child_pw(node, child_bit):
     if child is None:
         return 1.0
     return child.pw
-
-
-def _to_bit(symbol):
-    return "01".index(symbol)
 
 
 class _Node:

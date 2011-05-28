@@ -3,6 +3,7 @@ from nose.tools import eq_
 import itertools
 
 from libctw import ctw, naive_ctw
+from libctw.formatting import to_bits
 
 
 def test_kt_estim_update():
@@ -22,7 +23,7 @@ def test_see():
     contexted =naive_ctw._Contexted(naive_ctw._estim_kt_p)
     for seq in iter_all_seqs(seq_len=10):
         model = ctw.create_model()
-        model.see_generated(seq)
+        model.see_generated(to_bits(seq))
         eq_float_(model.root.pw, contexted.calc_p("", seq))
 
 
@@ -41,8 +42,8 @@ def test_predict_one():
             model = ctw.create_model(determ)
             verifier = naive_ctw.create_model(determ)
             for c in seq:
-                model.see_generated(c)
-                verifier.see_generated(c)
+                model.see_generated(to_bits(c))
+                verifier.see_generated(to_bits(c))
                 eq_float_(model.predict_one(), verifier.predict_one(),
                         precision=15)
 
@@ -50,11 +51,11 @@ def test_predict_one():
 def test_max_depth():
     model = ctw.create_model(max_depth=0)
     eq_(model.root.pw, 1.0)
-    model.see_generated("1")
+    model.see_generated([1])
     eq_(model.root.p_estim, 0.5)
     eq_(model.root.pw, model.root.p_estim)
 
-    model.see_generated("1")
+    model.see_generated([1])
     eq_(model.root.pw, naive_ctw._estim_kt_p(0, 2))
 
 
@@ -63,7 +64,7 @@ def test_max_depth_sum():
         total = 0.0
         for seq in iter_all_seqs(seq_len):
             model = ctw.create_model(max_depth=8)
-            model.see_generated(seq)
+            model.see_generated(to_bits(seq))
             total += model.root.pw
 
         eq_(total, 1.0)
@@ -73,21 +74,21 @@ def test_max_depth_example():
     # The calculated probablities are from the
     # 'Reflections on "The Context-Tree Weighting Method: Basic Properties"'
     # paper (figure 6 and 7).
-    model = ctw.create_model(max_depth=3, past="110")
-    model.see_generated("0100110")
+    model = ctw.create_model(max_depth=3, past=[1,1,0])
+    model.see_generated(to_bits("0100110"))
     p_seq = model.root.pw
     eq_float_(p_seq, 7/2048.0)
 
-    model.see_generated("0")
+    model.see_generated([0])
     p_seq2 = model.root.pw
     eq_float_(p_seq2, 153/65536.0)
 
 
 def test_manual_example():
     model = ctw.create_model()
-    model.see_generated("1")
+    model.see_generated([1])
     eq_(model.root.pw, 0.5)
-    model.see_generated("1")
+    model.see_generated([1])
     # pw = 0.5 * (3/8 + 1 * 0.5 * 0.5) = 5/16.0
     eq_(model.root.pw, 5/16.0)
 
@@ -96,9 +97,9 @@ def test_continue_example():
     # A test of the documentation example:
     # ./continue.py -n 10 01101
     model = ctw.create_model()
-    model.see_generated("01101")
+    model.see_generated(to_bits("01101"))
     p_given = model.root.pw
-    model.see_generated("1011011011")
+    model.see_generated(to_bits("1011011011"))
     p_seq = model.root.pw
     eq_float_(p_seq/float(p_given), 0.052825, precision=6)
 

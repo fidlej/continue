@@ -11,7 +11,7 @@ with P = 0.052825
 import sys
 import optparse
 
-from libctw import ctw, modeling, byting, factored
+from libctw import ctw, modeling, byting, factored, formatting
 
 DEFAULTS = {
         "num_predicted_bits": 100,
@@ -54,8 +54,8 @@ def _round_up(value, base):
     return whole
 
 
-def _train_model(model, train_seq):
-    model.see_generated(train_seq)
+def _train_model(model, train_bits):
+    model.see_generated(train_bits)
     model.switch_history()
 
 
@@ -73,9 +73,9 @@ def main():
         model = ctw.create_model(deterministic, options.depth)
 
     if options.train:
-        _train_model(model, options.train)
+        _train_model(model, formatting.to_bits(options.train))
 
-    model.see_generated(seq)
+    model.see_generated(formatting.to_bits(seq))
 
     probs = []
     bits = ""
