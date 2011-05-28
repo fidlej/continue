@@ -34,7 +34,6 @@ class _CtModel:
 
         # Now the self is ready for use.
         self.root = _Node()
-        self._update_after_switch(self.root, [])
 
     def see(self, seq):
         for c in seq:
