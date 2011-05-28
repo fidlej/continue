@@ -83,6 +83,15 @@ def test_max_depth_example():
     eq_float_(p_seq2, 153/65536.0)
 
 
+def test_manual_example():
+    model = ctw.create_model()
+    model.see("1")
+    eq_(model.root.pw, 0.5)
+    model.see("1")
+    # pw = 0.5 * (3/8 + 1 * 0.5 * 0.5) = 5/16.0
+    eq_(model.root.pw, 5/16.0)
+
+
 def test_continue_example():
     # A test of the documentation example:
     # ./continue.py -n 10 01101
