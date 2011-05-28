@@ -56,7 +56,7 @@ def _round_up(value, base):
 
 def _train_model(model, train_seq):
     model.see(train_seq)
-    model.switch_context()
+    model.switch_history()
 
 
 def main():

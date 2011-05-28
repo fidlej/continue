@@ -7,7 +7,7 @@ from libctw import ctw
 def test_children_respecting():
     model = ctw.create_model(deterministic=True)
     model.see("01")
-    model.switch_context()
+    model.switch_history()
     model.see("0")
 
     p_estim = 0

@@ -40,7 +40,11 @@ class _CtModel:
             bit = _to_bit(c)
             self._see_bit(bit)
 
-    def switch_context(self):
+    def switch_history(self):
+        """Keeps the learned model, but starts
+        with an empty history.
+        It allows to switch between sequence examples.
+        """
         self.switch_number += 1
         self.history = []
 
