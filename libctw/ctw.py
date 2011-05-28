@@ -30,8 +30,7 @@ class _CtModel:
         self.history = []
         self.past_len = len(past)
         self.switch_number = 0
-        for c in past:
-            self.add_history(_to_bit(c))
+        self.see_added([_to_bit(c) for c in past])
 
         # Now the self is ready for use.
         self.root = _Node()
@@ -46,14 +45,14 @@ class _CtModel:
         self.switch_number += 1
         self.history = []
 
-    def add_history(self, bit):
+    def see_added(self, bits):
         """Adds a historic bit without affecting the model parameters.
         The bit is outside of the model scope.
         Its P(bit) is not bound to this model.
         """
         # Note that it is enough to keep just the first and the last
         # max_depth bits of history.
-        self.history.append(bit)
+        self.history += bits
 
     def _see_bit(self, bit):
         """Updates the counts and precomputed probabilities
@@ -79,7 +78,7 @@ class _CtModel:
                 node.pw = 0.5 * (node.p_estim +
                     p0context * p1context * node.p_uncovered)
 
-        self.add_history(bit)
+        self.history.append(bit)
 
     def predict_one(self):
         """Computes the conditional probability
@@ -98,7 +97,9 @@ class _CtModel:
         for i, (child_bit, node) in enumerate(
                 zip([None] + context, reversed(path))):
             p_estim = node.p_estim * self.estim_update(bit, node.counts)
-            if node.children == NO_CHILDREN:
+            # The NO_CHILDREN test would not be enough
+            # if save_nodes=False is used.
+            if new_pw is None and node.children == NO_CHILDREN:
                 new_pw = p_estim
             else:
                 p_uncovered = node.p_uncovered

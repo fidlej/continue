@@ -26,6 +26,14 @@ def test_see():
         eq_float_(model.root.pw, contexted.calc_p("", seq))
 
 
+def test_predict_first():
+    for determ in [False, True]:
+        model = ctw.create_model(determ)
+        verifier = naive_ctw.create_model(determ)
+        eq_float_(model.predict_one(), verifier.predict_one(),
+                precision=15)
+
+
 def test_predict_one():
     seq_len = 8
     for determ in [False, True]:
