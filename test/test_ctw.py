@@ -74,7 +74,8 @@ def test_max_depth_example():
     # The calculated probablities are from the
     # 'Reflections on "The Context-Tree Weighting Method: Basic Properties"'
     # paper (figure 6 and 7).
-    model = ctw.create_model(max_depth=3, past=[1,1,0])
+    model = ctw.create_model(max_depth=3)
+    model.see_added([1,1,0])
     model.see_generated(to_bits("0100110"))
     p_seq = model.root.pw
     eq_float_(p_seq, 7/2048.0)

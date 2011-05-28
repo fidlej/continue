@@ -6,30 +6,26 @@ Joel Veness, Kee Siong Ng, Marcus Hutter, William Uther, David Silver
 http://jveness.info/software/default.html
 """
 
-def create_model(deterministic=False, max_depth=None, past=()):
+def create_model(deterministic=False, max_depth=None):
     if deterministic:
         estim_update = _determ_estim_update
     else:
         estim_update = _kt_estim_update
 
-    return _CtModel(estim_update, max_depth, past)
+    return _CtModel(estim_update, max_depth)
 
 
 NO_CHILDREN = [None, None]
 
 
 class _CtModel:
-    def __init__(self, estim_update, max_depth=None, past=()):
+    def __init__(self, estim_update, max_depth=None):
         """Creates a Context Tree model.
-
-        The given past is outside of the model scope.
-        Its P(past) is not bound to this model.
         """
         self.estim_update = estim_update
         self.max_depth = max_depth
         self.history = []
         self.root = _Node()
-        self.see_added(past)
 
     def see_generated(self, bits):
         """Updates the model parameters
