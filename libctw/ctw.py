@@ -168,7 +168,7 @@ def _child_pw(node, child_bit):
 
 
 def _to_bit(symbol):
-    return 1 if symbol == "1" else 0
+    return "01".index(symbol)
 
 
 class _Node:
