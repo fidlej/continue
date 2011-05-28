@@ -28,10 +28,8 @@ class _CtModel:
         self.estim_update = estim_update
         self.max_depth = max_depth
         self.history = []
-        self.see_added(past)
-
-        # Now the self is ready for use.
         self.root = _Node()
+        self.see_added(past)
 
     def see_generated(self, bits):
         """Updates the model parameters
