@@ -29,7 +29,7 @@ def _parse_args():
     parser.add_option("-b", "--bytes", action="store_true",
             help="accept and predict a sequence of bytes")
     parser.add_option("-t", "--train",
-            help="train the model on the given data file")
+            help="train the model on the given training sequence")
     parser.set_defaults(**DEFAULTS)
 
     options, args = parser.parse_args()
@@ -54,6 +54,11 @@ def _round_up(value, base):
     return whole
 
 
+def _train_model(model, train_seq):
+    model.see(train_seq)
+    model.switch_context()
+
+
 def main():
     options, input_seq = _parse_args()
     deterministic = options.estimator == "determ"
@@ -68,8 +73,7 @@ def main():
         model = ctw.create_model(deterministic, options.depth)
 
     if options.train:
-        model.see(open(options.train, "rb").read())
-        model.switch_context()
+        _train_model(model, options.train)
 
     model.see(seq)
 
