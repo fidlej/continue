@@ -15,6 +15,9 @@ def create_model(deterministic=False, max_depth=None, past=""):
     return _CtModel(estim_update, max_depth, past)
 
 
+NO_CHILDREN = [None, None]
+
+
 class _CtModel:
     def __init__(self, estim_update, max_depth=None, past=""):
         """Creates a Context Tree model.
@@ -64,7 +67,7 @@ class _CtModel:
             node.counts[bit] += 1
 
             # No weighting is used, if the node has no children.
-            if i == 0:
+            if node.children == NO_CHILDREN:
                 node.pw = node.p_estim
             else:
                 if node.seen_switch != self.switch_number:
@@ -95,13 +98,20 @@ class _CtModel:
         for i, (child_bit, node) in enumerate(
                 zip([None] + context, reversed(path))):
             p_estim = node.p_estim * self.estim_update(bit, node.counts)
-            if child_bit is None:
+            if node.children == NO_CHILDREN:
                 new_pw = p_estim
             else:
                 p_uncovered = node.p_uncovered
                 if node.seen_switch != self.switch_number:
                     node_context = context[i:]
                     p_uncovered *= self._get_p_uncovered(node_context)
+
+                # The context can be shorter than
+                # the existing tree depth, when switching history.
+                # Both children will carry valid probability.
+                if child_bit is None:
+                    child_bit = 0
+                    new_pw = _child_pw(node, child_bit)
 
                 p_other_child_pw = _child_pw(node, 1 - child_bit)
                 new_pw = 0.5 * (p_estim +
