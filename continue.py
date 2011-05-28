@@ -28,7 +28,7 @@ def _parse_args():
             help="use Krichevski-Trofimov or deterministic prior [kt|determ] (default=%(estimator)s)" % DEFAULTS)
     parser.add_option("-b", "--bytes", action="store_true",
             help="accept and predict a sequence of bytes")
-    parser.add_option("-t", "--train",
+    parser.add_option("-t", "--train", action="append",
             help="train the model on the given training sequence")
     parser.set_defaults(**DEFAULTS)
 
@@ -54,13 +54,14 @@ def _round_up(value, base):
     return whole
 
 
-def _train_model(model, seq, bytes=False):
-    if bytes:
-        seq = byting.to_binseq(seq)
+def _train_model(model, train_seqs, bytes=False):
+    for seq in train_seqs:
+        if bytes:
+            seq = byting.to_binseq(seq)
 
-    training_bits = formatting.to_bits(seq)
-    model.see_generated(training_bits)
-    model.switch_history()
+        training_bits = formatting.to_bits(seq)
+        model.see_generated(training_bits)
+        model.switch_history()
 
 
 def main():
