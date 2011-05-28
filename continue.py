@@ -63,7 +63,7 @@ def main():
     options, input_seq = _parse_args()
     deterministic = options.estimator == "determ"
     if options.bytes:
-        seq = byting.to_bits(input_seq)
+        seq = byting.to_binseq(input_seq)
         num_predicted_bits = _round_up(options.num_predicted_bits, 8)
         model = factored.create_model(deterministic, options.depth,
                 num_factors=8)

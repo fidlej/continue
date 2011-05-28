@@ -5,8 +5,8 @@ from libctw import byting
 
 
 def test_to_bits():
-    eq_(byting.to_bits("A"), "01000001")
-    eq_(byting.to_bits("AC"), "0100000101000011")
+    eq_(byting.to_binseq("A"), "01000001")
+    eq_(byting.to_binseq("AC"), "0100000101000011")
 
 
 def test_to_bytes():
@@ -15,5 +15,5 @@ def test_to_bytes():
 
 
 def test_conversion():
-    eq_(byting.to_bytes(byting.to_bits("hello world")), "hello world")
+    eq_(byting.to_bytes(byting.to_binseq("hello world")), "hello world")
 

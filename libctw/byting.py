@@ -1,5 +1,5 @@
 
-def to_bits(bytes):
+def to_binseq(bytes):
     seq = []
     for byte in bytes:
         value = ord(byte)
