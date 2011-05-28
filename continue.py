@@ -16,6 +16,7 @@ from libctw import ctw, modeling, byting, factored, formatting
 DEFAULTS = {
         "num_predicted_bits": 100,
         "estimator": "kt",
+        "train": [],
         }
 
 def _parse_args():
@@ -30,6 +31,8 @@ def _parse_args():
             help="accept and predict a sequence of bytes")
     parser.add_option("-t", "--train", action="append",
             help="train the model on the given training sequence")
+    parser.add_option("-f", "--file",
+            help="take training sequences from the file")
     parser.set_defaults(**DEFAULTS)
 
     options, args = parser.parse_args()
@@ -39,6 +42,10 @@ def _parse_args():
     seq = args[0]
     if not options.bytes and len(seq.strip("01")) > 0:
         parser.error("Expecting a sequence of 0s and 1s.")
+
+    if options.file:
+        with open(options.file) as input:
+            options.train += input.readlines()
 
     return options, seq
 
@@ -55,7 +62,7 @@ def _round_up(value, base):
 
 
 def _train_model(model, train_seqs, bytes=False):
-    for seq in train_seqs:
+    for i, seq in enumerate(train_seqs):
         if bytes:
             seq = byting.to_binseq(seq)
 
