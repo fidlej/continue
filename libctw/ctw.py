@@ -114,7 +114,7 @@ class _CtModel:
             else:
                 log_p_uncovered = node.log_p_uncovered
                 if i == 0:
-                    p_uncovered += LOG_ONE_HALF
+                    log_p_uncovered += LOG_ONE_HALF
 
                 # The context can be shorter than
                 # the existing tree depth, when switching history.
