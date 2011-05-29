@@ -80,15 +80,14 @@ class _CtModel:
                     p0context * p1context * node.p_uncovered)
 
         self.history.append(bit)
+        if self.root.pw == 0:
+            raise ValueError(
+                    "Impossible history. Try non-deterministic prior.")
 
     def predict_one(self):
         """Computes the conditional probability
         P(Next_bit=1|history).
         """
-        if self.root.pw == 0:
-            raise ValueError(
-                    "Impossible history. Try non-deterministic prior.")
-
         # The implementation does the following
         # without making permanent changes by see_generated():
         #     p_given = self.root.pw

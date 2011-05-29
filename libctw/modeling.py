@@ -19,13 +19,37 @@ def advance(model):
     return symbol, p
 
 
-def train_model(model, train_seqs, bytes=False):
-    for i, seq in enumerate(train_seqs):
+class AllGenerated:
+    def is_generated(self, bit_number):
+        return True
+
+
+class Interlaced:
+    """Tells that the added and generated bits are interlaced:
+        bits = added + generated + added + generated + ...
+    """
+    def __init__(self, num_added_bits, num_generated_bits):
+        self.num_added_bits = num_added_bits
+        self.num_generated_bits = num_generated_bits
+
+    def is_generated(self, bit_number):
+        index = bit_number % (self.num_added_bits + self.num_generated_bits)
+        return index >= self.num_added_bits
+
+
+def train_model(model, train_seqs, bytes=False, source_info=AllGenerated()):
+    for seq in train_seqs:
+        print "seq:", seq
         if bytes:
             seq = byting.to_binseq(seq)
 
         training_bits = formatting.to_bits(seq)
-        model.see_generated(training_bits)
+        for i, bit in enumerate(training_bits):
+            if source_info.is_generated(i):
+                model.see_generated([bit])
+            else:
+                model.see_added([bit])
+
         model.switch_history()
 
 

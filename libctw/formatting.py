@@ -7,3 +7,7 @@ def to_bits(seq):
 def _to_bit(symbol):
     return "01".index(symbol)
 
+
+def to_seq(bits):
+    return "".join("01"[bit] for bit in bits)
+
