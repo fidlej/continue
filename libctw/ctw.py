@@ -6,6 +6,8 @@ Joel Veness, Kee Siong Ng, Marcus Hutter, William Uther, David Silver
 http://jveness.info/software/default.html
 """
 
+import math
+
 def create_model(deterministic=False, max_depth=None):
     if deterministic:
         estim_update = _determ_estim_update
@@ -16,6 +18,8 @@ def create_model(deterministic=False, max_depth=None):
 
 
 NO_CHILDREN = [None, None]
+LOG_ONE = 0.0
+LOG_ONE_HALF = math.log(0.5)
 
 
 class _CtModel:
@@ -64,25 +68,23 @@ class _CtModel:
         # calls such nodes "has a tail".
         # Our p_uncovered updating is OK with history switching
         # and history adding by see_added().
-        path[-1].p_uncovered *= 0.5
+        path[-1].log_p_uncovered += LOG_ONE_HALF
 
         for node in reversed(path):
-            node.p_estim *= self.estim_update(bit, node.counts)
+            node.log_p_estim += math.log(self.estim_update(bit, node.counts))
             node.counts[bit] += 1
 
             # No weighting is used, if the node has no children.
             if node.children == NO_CHILDREN:
-                node.pw = node.p_estim
+                node.log_pw = node.log_p_estim
             else:
-                p0context = _child_pw(node, 0)
-                p1context = _child_pw(node, 1)
-                node.pw = 0.5 * (node.p_estim +
-                    p0context * p1context * node.p_uncovered)
+                log_p0context = _child_log_pw(node, 0)
+                log_p1context = _child_log_pw(node, 1)
+                childrens_log_p = (log_p0context + log_p1context +
+                        node.log_p_uncovered)
+                node.log_pw = _avg_log_p(node.log_p_estim, childrens_log_p)
 
         self.history.append(bit)
-        if self.root.pw == 0:
-            raise ValueError(
-                    "Impossible history. Try non-deterministic prior.")
 
     def predict_one(self):
         """Computes the conditional probability
@@ -99,31 +101,33 @@ class _CtModel:
         path = _get_context_path(self.root, context)
         assert len(path) == len(context) + 1
 
-        new_pw = None
+        new_log_pw = None
         for i, (child_bit, node) in enumerate(
                 zip([None] + context, reversed(path))):
-            p_estim = node.p_estim * self.estim_update(bit, node.counts)
+            log_p_estim = node.log_p_estim + math.log(
+                    self.estim_update(bit, node.counts))
             # The NO_CHILDREN test would not be enough
             # if save_nodes=False is used.
-            if new_pw is None and node.children == NO_CHILDREN:
-                new_pw = p_estim
+            if new_log_pw is None and node.children == NO_CHILDREN:
+                new_log_pw = log_p_estim
             else:
-                p_uncovered = node.p_uncovered
+                log_p_uncovered = node.log_p_uncovered
                 if i == 0:
-                    p_uncovered *= 0.5
+                    p_uncovered += LOG_ONE_HALF
 
                 # The context can be shorter than
                 # the existing tree depth, when switching history.
                 # Both children will carry valid probability.
                 if child_bit is None:
                     child_bit = 0
-                    new_pw = _child_pw(node, child_bit)
+                    new_log_pw = _child_log_pw(node, child_bit)
 
-                p_other_child_pw = _child_pw(node, 1 - child_bit)
-                new_pw = 0.5 * (p_estim +
-                    new_pw * p_other_child_pw * p_uncovered)
+                other_child_log_pw = _child_log_pw(node, 1 - child_bit)
+                childrens_log_p = (new_log_pw + other_child_log_pw +
+                        log_p_uncovered)
+                new_log_pw = _avg_log_p(log_p_estim, childrens_log_p)
 
-        return new_pw / float(self.root.pw)
+        return math.exp(new_log_pw - self.root.log_pw)
 
     def _get_context(self):
         """Returns the recent context.
@@ -153,26 +157,49 @@ def _get_context_path(root, context, save_nodes=False):
     return path
 
 
-def _child_pw(node, child_bit):
+def _avg_log_p(a_log_p, b_log_p):
+    """Returns log(0.5 * (a_p + b_p)).
+    It is equal to: log(0.5) + log(b_p * (1 +  a_p/b_p)).
+    """
+    log_rate = a_log_p - b_log_p
+    # It is OK to use x instead of log(1 + e**x) if x is big.
+    # This trick is from Joel Veness's CTW source code.
+    if log_rate >= 100:
+        log_one_plus = log_rate
+    else:
+        log_one_plus = math.log(1 + math.exp(log_rate))
+
+    return LOG_ONE_HALF + b_log_p + log_one_plus
+
+
+def _child_log_pw(node, child_bit):
     child = node.children[child_bit]
     if child is None:
-        return 1.0
-    return child.pw
+        return LOG_ONE
+    return child.log_pw
 
 
 class _Node:
     def __init__(self):
-        self.p_estim = 1.0
-        self.pw = 1.0
-        self.p_uncovered = 1.0
+        # It is needed to work with log(p)
+        # when working with probabilities lower
+        # than 1e-324.
+        self.log_p_estim = LOG_ONE
+        self.log_pw = LOG_ONE
+        self.log_p_uncovered = LOG_ONE
         self.counts = [0, 0]
         self.children = [None, None]
 
+    #TODO: don't provide the pw
+    @property
+    def pw(self):
+        return math.exp(self.log_pw)
+
     def __repr__(self):
         return "Node" + str(dict(
-            p_estim=self.p_estim,
-            pw=self.pw,
-            p_uncovered=self.p_uncovered,
+            log_p_estim=self.log_p_estim,
+            log_pw=self.log_pw,
+            log_p_uncovered=self.log_p_uncovered,
             counts=self.counts))
 
 

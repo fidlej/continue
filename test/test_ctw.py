@@ -1,6 +1,7 @@
 
 from nose.tools import eq_
 import itertools
+import math
 
 from libctw import ctw, naive_ctw
 from libctw.formatting import to_bits
@@ -31,8 +32,7 @@ def test_predict_first():
     for determ in [False, True]:
         model = ctw.create_model(determ)
         verifier = naive_ctw.create_model(determ)
-        eq_float_(model.predict_one(), verifier.predict_one(),
-                precision=15)
+        eq_float_(model.predict_one(), verifier.predict_one())
 
 
 def test_predict_one():
@@ -45,15 +45,15 @@ def test_predict_one():
                 model.see_generated(to_bits(c))
                 verifier.see_generated(to_bits(c))
                 eq_float_(model.predict_one(), verifier.predict_one(),
-                        precision=15)
+                        precision=10)
 
 
 def test_max_depth():
     model = ctw.create_model(max_depth=0)
     eq_(model.root.pw, 1.0)
     model.see_generated([1])
-    eq_(model.root.p_estim, 0.5)
-    eq_(model.root.pw, model.root.p_estim)
+    eq_(model.root.log_p_estim, math.log(0.5))
+    eq_(model.root.log_pw, model.root.log_p_estim)
 
     model.see_generated([1])
     eq_(model.root.pw, naive_ctw._estim_kt_p(0, 2))
@@ -67,7 +67,7 @@ def test_max_depth_sum():
             model.see_generated(to_bits(seq))
             total += model.root.pw
 
-        eq_(total, 1.0)
+        eq_float_(total, 1.0, precision=15)
 
 
 def test_max_depth_example():
@@ -91,7 +91,7 @@ def test_manual_example():
     eq_(model.root.pw, 0.5)
     model.see_generated([1])
     # pw = 0.5 * (3/8 + 1 * 0.5 * 0.5) = 5/16.0
-    eq_(model.root.pw, 5/16.0)
+    eq_float_(model.root.pw, 5/16.0)
 
 
 def test_continue_example():
@@ -122,6 +122,6 @@ def _check_estim_update(estim_update, estimator):
             eq_float_(p, estimator(*counts))
 
 
-def eq_float_(value, expected, precision=16):
+def eq_float_(value, expected, precision=13):
     eq_("%.*f" % (precision, value),
             "%.*f" % (precision, expected))
