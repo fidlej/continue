@@ -25,7 +25,7 @@ def test_see():
     for seq in iter_all_seqs(seq_len=10):
         model = ctw.create_model()
         model.see_generated(to_bits(seq))
-        eq_float_(model.root.pw, contexted.calc_p("", seq))
+        eq_float_(model.get_history_p(), contexted.calc_p("", seq))
 
 
 def test_predict_first():
@@ -50,13 +50,13 @@ def test_predict_one():
 
 def test_max_depth():
     model = ctw.create_model(max_depth=0)
-    eq_(model.root.pw, 1.0)
+    eq_(model.get_history_p(), 1.0)
     model.see_generated([1])
     eq_(model.root.log_p_estim, math.log(0.5))
     eq_(model.root.log_pw, model.root.log_p_estim)
 
     model.see_generated([1])
-    eq_(model.root.pw, naive_ctw._estim_kt_p(0, 2))
+    eq_(model.get_history_p(), naive_ctw._estim_kt_p(0, 2))
 
 
 def test_max_depth_sum():
@@ -65,7 +65,7 @@ def test_max_depth_sum():
         for seq in iter_all_seqs(seq_len):
             model = ctw.create_model(max_depth=8)
             model.see_generated(to_bits(seq))
-            total += model.root.pw
+            total += model.get_history_p()
 
         eq_float_(total, 1.0, precision=15)
 
@@ -77,21 +77,21 @@ def test_max_depth_example():
     model = ctw.create_model(max_depth=3)
     model.see_added([1,1,0])
     model.see_generated(to_bits("0100110"))
-    p_seq = model.root.pw
+    p_seq = model.get_history_p()
     eq_float_(p_seq, 7/2048.0)
 
     model.see_generated([0])
-    p_seq2 = model.root.pw
+    p_seq2 = model.get_history_p()
     eq_float_(p_seq2, 153/65536.0)
 
 
 def test_manual_example():
     model = ctw.create_model()
     model.see_generated([1])
-    eq_(model.root.pw, 0.5)
+    eq_(model.get_history_p(), 0.5)
     model.see_generated([1])
     # pw = 0.5 * (3/8 + 1 * 0.5 * 0.5) = 5/16.0
-    eq_float_(model.root.pw, 5/16.0)
+    eq_float_(model.get_history_p(), 5/16.0)
 
 
 def test_continue_example():
@@ -99,9 +99,9 @@ def test_continue_example():
     # ./continue.py -n 10 01101
     model = ctw.create_model()
     model.see_generated(to_bits("01101"))
-    p_given = model.root.pw
+    p_given = model.get_history_p()
     model.see_generated(to_bits("1011011011"))
-    p_seq = model.root.pw
+    p_seq = model.get_history_p()
     eq_float_(p_seq/float(p_given), 0.052825, precision=6)
 
 

@@ -138,6 +138,11 @@ class _CtModel:
             assert len(context) == self.max_depth
         return context
 
+    def get_history_p(self):
+        """Returns the probability of the whole history.
+        """
+        return math.exp(self.root.log_pw)
+
 
 def _get_context_path(root, context, save_nodes=False):
     """Returns a path from the root to the start of the context.
@@ -189,11 +194,6 @@ class _Node:
         self.log_p_uncovered = LOG_ONE
         self.counts = [0, 0]
         self.children = [None, None]
-
-    #TODO: don't provide the pw
-    @property
-    def pw(self):
-        return math.exp(self.log_pw)
 
     def __repr__(self):
         return "Node" + str(dict(

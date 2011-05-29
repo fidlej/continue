@@ -13,5 +13,5 @@ def test_children_respecting():
     p_estim = 0
     p_uncovered = 0.5 * 0.5
     p_child = 0.5
-    eq_(model.root.pw, 0.5 * (p_estim + p_child * 1.0 * p_uncovered))
+    eq_(model.get_history_p(), 0.5 * (p_estim + p_child * 1.0 * p_uncovered))
 
