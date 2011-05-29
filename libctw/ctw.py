@@ -20,6 +20,7 @@ def create_model(deterministic=False, max_depth=None):
 NO_CHILDREN = [None, None]
 LOG_ONE = 0.0
 LOG_ONE_HALF = math.log(0.5)
+LOG_ZERO = float("-inf")
 
 
 class _CtModel:
@@ -71,7 +72,7 @@ class _CtModel:
         path[-1].log_p_uncovered += LOG_ONE_HALF
 
         for node in reversed(path):
-            node.log_p_estim += math.log(self.estim_update(bit, node.counts))
+            node.log_p_estim += self.estim_update(bit, node.counts)
             node.counts[bit] += 1
 
             # No weighting is used, if the node has no children.
@@ -104,7 +105,7 @@ class _CtModel:
         new_log_pw = None
         for i, (child_bit, node) in enumerate(
                 zip([None] + context, reversed(path))):
-            log_p_estim = node.log_p_estim + math.log(
+            log_p_estim = (node.log_p_estim +
                     self.estim_update(bit, node.counts))
             # The NO_CHILDREN test would not be enough
             # if save_nodes=False is used.
@@ -204,29 +205,31 @@ class _Node:
 
 
 def _determ_estim_update(new_bit, counts):
+    """Beliefs only a sequence of all ones or zeros.
+    """
     new_counts = counts[:]
     new_counts[new_bit] += 1
     if new_counts[0] > 0 and new_counts[1] > 0:
-        return 0.0
+        return LOG_ZERO
 
-    p_new = 0.0
-    if new_counts[0] == 0:
-        p_new += 0.5
-    if new_counts[1] == 0:
-        p_new += 0.5
+    log_p_new = _determ_log_p(new_counts)
+    log_p_old = _determ_log_p(counts)
+    return log_p_new - log_p_old
 
-    p_old = 0.0
+
+def _determ_log_p(counts):
+    if counts[0] == 0 and counts[1] == 0:
+        return LOG_ONE
     if counts[0] == 0:
-        p_old += 0.5
+        return LOG_ONE_HALF
     if counts[1] == 0:
-        p_old += 0.5
-
-    return p_new / float(p_old)
+        return LOG_ONE_HALF
+    return LOG_ZERO
 
 
 def _kt_estim_update(new_bit, counts):
-    """Computes P(Next_bit=new_bit|counts)
+    """Computes log(P(Next_bit=new_bit|counts))
     for the the Krichevski-Trofimov estimator.
     """
-    return (counts[new_bit] + 0.5) / float((sum(counts) + 1))
+    return math.log((counts[new_bit] + 0.5) / float((sum(counts) + 1)))
 

@@ -116,7 +116,7 @@ def _check_estim_update(estim_update, estimator):
             p = 1.0
             counts = [0, 0]
             for bit in bits:
-                p *= estim_update(bit, counts)
+                p *= math.exp(estim_update(bit, counts))
                 counts[bit] += 1
 
             eq_float_(p, estimator(*counts))
