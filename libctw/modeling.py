@@ -39,7 +39,6 @@ class Interlaced:
 
 def train_model(model, train_seqs, bytes=False, source_info=AllGenerated()):
     for seq in train_seqs:
-        print "seq:", seq
         if bytes:
             seq = byting.to_binseq(seq)
 
