@@ -45,7 +45,8 @@ def _parse_args():
 
     if options.file:
         with open(options.file) as input:
-            options.train += input.readlines()
+            options.train += [line.rstrip("\n\r") for line in
+                    input.readlines()]
 
     return options, seq
 
@@ -59,16 +60,6 @@ def _round_up(value, base):
     if whole < value:
         whole += base
     return whole
-
-
-def _train_model(model, train_seqs, bytes=False):
-    for i, seq in enumerate(train_seqs):
-        if bytes:
-            seq = byting.to_binseq(seq)
-
-        training_bits = formatting.to_bits(seq)
-        model.see_generated(training_bits)
-        model.switch_history()
 
 
 def main():
@@ -85,7 +76,7 @@ def main():
         model = ctw.create_model(deterministic, options.depth)
 
     if options.train:
-        _train_model(model, options.train, options.bytes)
+        modeling.train_model(model, options.train, options.bytes)
 
     model.see_generated(formatting.to_bits(seq))
 

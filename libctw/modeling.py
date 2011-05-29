@@ -1,4 +1,6 @@
 
+from libctw import byting, formatting
+
 
 def advance(model):
     """Generates deterministically the next bit.
@@ -15,4 +17,15 @@ def advance(model):
     model.see_generated([bit])
     symbol = "1" if bit else "0"
     return symbol, p
+
+
+def train_model(model, train_seqs, bytes=False):
+    for i, seq in enumerate(train_seqs):
+        if bytes:
+            seq = byting.to_binseq(seq)
+
+        training_bits = formatting.to_bits(seq)
+        model.see_generated(training_bits)
+        model.switch_history()
+
 
