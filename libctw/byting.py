@@ -1,4 +1,5 @@
 
+
 def to_binseq(bytes):
     seq = []
     for byte in bytes:
@@ -24,5 +25,3 @@ def to_bytes(bits):
         index += 8
 
     return "".join(bytes)
-
-

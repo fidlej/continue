@@ -86,6 +86,9 @@ class _CtModel:
                 node.log_pw = _avg_log_p(node.log_p_estim, childrens_log_p)
 
         self.history.append(bit)
+        if math.isnan(self.root.log_pw):
+            raise ValueError(
+                    "Impossible history. Try non-deterministic prior.")
 
     def predict_one(self):
         """Computes the conditional probability

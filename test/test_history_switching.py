@@ -34,3 +34,17 @@ def test_predict_from_zero_history():
     p_child = 0.5
     pw = 0.5 * (p_estim + p_uncovered * p_child * 1.0)
     eq_float_(model.predict_one(), pw / model.get_history_p())
+
+
+def test_invalid_history():
+    model = ctw.create_model(deterministic=True)
+    model.see_generated([0, 1, 1])
+    model.switch_history()
+
+    model.see_generated([0, 1])
+    try:
+        model.see_generated([0])
+        assert False, "ValueError is expected"
+    except ValueError, e:
+        eq_(str(e), "Impossible history. Try non-deterministic prior.")
+
