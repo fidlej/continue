@@ -24,6 +24,12 @@ class _Factored:
 
             self.offset = (self.offset + 1) % len(self.cts)
 
+    def see_added(self, bits):
+        for ct in self.cts:
+            ct.see_added(bits)
+
+        self.offset = (self.offset + len(bits)) % len(self.cts)
+
     def predict_one(self):
         return self.cts[self.offset].predict_one()
 
