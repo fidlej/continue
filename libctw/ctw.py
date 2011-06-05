@@ -142,10 +142,12 @@ class _CtModel:
             assert len(context) == self.max_depth
         return context
 
-    def get_history_p(self):
-        """Returns the probability of the whole history.
+    def get_history_log_p(self):
+        """Returns the log(probability) of the whole history.
+        The log is returned instead of P,
+        to be able to represent very small probabilities.
         """
-        return math.exp(self.root.log_pw)
+        return self.root.log_pw
 
 
 def _get_context_path(root, context, save_nodes=False):

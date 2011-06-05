@@ -20,12 +20,16 @@ def test_empty_context():
     eq_(model.predict_one(), 0.5)
 
 
+def _get_history_p(model):
+    return math.exp(model.get_history_log_p())
+
+
 def test_see():
     contexted =naive_ctw._Contexted(naive_ctw._estim_kt_p)
     for seq in iter_all_seqs(seq_len=10):
         model = ctw.create_model()
         model.see_generated(to_bits(seq))
-        eq_float_(model.get_history_p(), contexted.calc_p("", seq))
+        eq_float_(_get_history_p(model), contexted.calc_p("", seq))
 
 
 def test_predict_first():
@@ -50,13 +54,13 @@ def test_predict_one():
 
 def test_max_depth():
     model = ctw.create_model(max_depth=0)
-    eq_(model.get_history_p(), 1.0)
+    eq_(_get_history_p(model), 1.0)
     model.see_generated([1])
     eq_(model.root.log_p_estim, math.log(0.5))
     eq_(model.root.log_pw, model.root.log_p_estim)
 
     model.see_generated([1])
-    eq_(model.get_history_p(), naive_ctw._estim_kt_p(0, 2))
+    eq_(_get_history_p(model), naive_ctw._estim_kt_p(0, 2))
 
 
 def test_max_depth_sum():
@@ -65,7 +69,7 @@ def test_max_depth_sum():
         for seq in iter_all_seqs(seq_len):
             model = ctw.create_model(max_depth=8)
             model.see_generated(to_bits(seq))
-            total += model.get_history_p()
+            total += _get_history_p(model)
 
         eq_float_(total, 1.0, precision=15)
 
@@ -77,21 +81,21 @@ def test_max_depth_example():
     model = ctw.create_model(max_depth=3)
     model.see_added([1,1,0])
     model.see_generated(to_bits("0100110"))
-    p_seq = model.get_history_p()
+    p_seq = _get_history_p(model)
     eq_float_(p_seq, 7/2048.0)
 
     model.see_generated([0])
-    p_seq2 = model.get_history_p()
+    p_seq2 = _get_history_p(model)
     eq_float_(p_seq2, 153/65536.0)
 
 
 def test_manual_example():
     model = ctw.create_model()
     model.see_generated([1])
-    eq_(model.get_history_p(), 0.5)
+    eq_(_get_history_p(model), 0.5)
     model.see_generated([1])
     # pw = 0.5 * (3/8 + 1 * 0.5 * 0.5) = 5/16.0
-    eq_float_(model.get_history_p(), 5/16.0)
+    eq_float_(_get_history_p(model), 5/16.0)
 
 
 def test_continue_example():
@@ -99,9 +103,9 @@ def test_continue_example():
     # ./continue.py -n 10 01101
     model = ctw.create_model()
     model.see_generated(to_bits("01101"))
-    p_given = model.get_history_p()
+    p_given = _get_history_p(model)
     model.see_generated(to_bits("1011011011"))
-    p_seq = model.get_history_p()
+    p_seq = _get_history_p(model)
     eq_float_(p_seq/float(p_given), 0.052825, precision=6)
 
 
