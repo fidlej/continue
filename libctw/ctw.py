@@ -48,9 +48,9 @@ class _CtModel:
         self.history = []
 
     def see_added(self, bits):
-        """Adds a historic bit without affecting the model parameters.
-        The bit is outside of the model scope.
-        Its P(bit) is not bound to this model.
+        """Adds the historic bits without affecting the model parameters.
+        The bits are outside of the model scope.
+        The P(bits) is not bound to this model.
         """
         # Note that it is enough to keep just the last
         # max_depth bits of history.
