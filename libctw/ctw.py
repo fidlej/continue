@@ -244,12 +244,10 @@ def _kt_estim_update(new_bit, counts):
     return math.log((counts[new_bit] + 0.5) / float((sum(counts) + 1)))
 
 def _recalculate_log_p_estim(counts, estim_update):
-    log_p_estim = LOG_ONE
-    new_counts = [0, 0]
-    for bit in [0, 1]:
-        for i in xrange(counts[bit]):
-            log_p_estim += estim_update(bit, new_counts)
-            new_counts[bit] += 1
-
-    return log_p_estim
-
+    # Only the deterministic prior needs recomputing.
+    assert estim_update is _determ_estim_update
+    if counts[0] == 0 and counts[1] == 0:
+        return LOG_ONE
+    if counts[0] == 0 or counts[1] == 0:
+        return LOG_ONE_HALF
+    return LOG_ZERO
