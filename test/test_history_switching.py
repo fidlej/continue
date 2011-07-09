@@ -46,7 +46,8 @@ def test_invalid_history():
     model.see_generated([0, 1])
     try:
         model.see_generated([0])
-        assert False, "ValueError is expected"
-    except ValueError, e:
-        eq_(str(e), "Impossible history. Try non-deterministic prior.")
+        assert False, "ImpossibleHistoryError is expected"
+    except ctw.ImpossibleHistoryError, e:
+        assert str(e).startswith(
+                "Impossible history. Try non-deterministic prior.")
 

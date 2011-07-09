@@ -7,6 +7,7 @@ http://jveness.info/software/default.html
 """
 
 import math
+from libctw import formatting
 
 def create_model(deterministic=False, max_depth=None):
     if deterministic:
@@ -21,6 +22,9 @@ NO_CHILDREN = [None, None]
 LOG_ONE = 0.0
 LOG_ONE_HALF = math.log(0.5)
 LOG_ZERO = float("-inf")
+
+class ImpossibleHistoryError(Exception):
+    pass
 
 
 class _CtModel:
@@ -78,8 +82,9 @@ class _CtModel:
 
         self.history.append(bit)
         if math.isnan(self.root.log_pw):
-            raise ValueError(
-                    "Impossible history. Try non-deterministic prior.")
+            raise ImpossibleHistoryError(
+                    "Impossible history. Try non-deterministic prior. " +
+                    "History: %s" % formatting.to_seq(self.history))
 
     def _revert_bit(self):
         bit = self.history.pop(-1)
@@ -102,7 +107,12 @@ class _CtModel:
         P(Next_bit=1|history).
         """
         log_pw = self.root.log_pw
-        self._see_generated_bit(1)
+        try:
+            self._see_generated_bit(1)
+        except ImpossibleHistoryError:
+            self._revert_bit()
+            return 0.0
+
         new_log_pw = self.root.log_pw
         self._revert_bit()
         return math.exp(new_log_pw - log_pw)
