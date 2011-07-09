@@ -74,64 +74,38 @@ class _CtModel:
         for node in reversed(path):
             node.log_p_estim += self.estim_update(bit, node.counts)
             node.counts[bit] += 1
-
-            # No weighting is used, if the node has no children.
-            if node.children == NO_CHILDREN:
-                node.log_pw = node.log_p_estim
-            else:
-                log_p0context = _child_log_pw(node, 0)
-                log_p1context = _child_log_pw(node, 1)
-                childrens_log_p = (log_p0context + log_p1context +
-                        node.log_p_uncovered)
-                node.log_pw = _avg_log_p(node.log_p_estim, childrens_log_p)
+            node.recalculate_pw()
 
         self.history.append(bit)
         if math.isnan(self.root.log_pw):
             raise ValueError(
                     "Impossible history. Try non-deterministic prior.")
 
+    def _revert_bit(self):
+        bit = self.history.pop(-1)
+        context = self._get_context()
+        path = _get_context_path(self.root, context)
+
+        path[-1].log_p_uncovered -= LOG_ONE_HALF
+        for node in reversed(path):
+            node.counts[bit] -= 1
+            decrement = self.estim_update(bit, node.counts)
+            if decrement == LOG_ZERO:
+                node.log_p_estim = _recalculate_log_p_estim(node.counts,
+                        self.estim_update)
+            else:
+                node.log_p_estim -= decrement
+            node.recalculate_pw()
+
     def predict_one(self):
         """Computes the conditional probability
         P(Next_bit=1|history).
         """
-        # The implementation does the following
-        # without making permanent changes by see_generated():
-        #     p_given = self.root.pw
-        #     see_generated(bits=[1])
-        #     p_seq = self.root.pw
-        #     return p_seq / float(p_given)
-        bit = 1
-        context = self._get_context()
-        path = _get_context_path(self.root, context)
-        assert len(path) == len(context) + 1
-
-        new_log_pw = None
-        for i, (child_bit, node) in enumerate(
-                zip([None] + context, reversed(path))):
-            log_p_estim = (node.log_p_estim +
-                    self.estim_update(bit, node.counts))
-            # The NO_CHILDREN test would not be enough
-            # if save_nodes=False is used.
-            if new_log_pw is None and node.children == NO_CHILDREN:
-                new_log_pw = log_p_estim
-            else:
-                log_p_uncovered = node.log_p_uncovered
-                if i == 0:
-                    log_p_uncovered += LOG_ONE_HALF
-
-                # The context can be shorter than
-                # the existing tree depth, when switching history.
-                # Both children will carry valid probability.
-                if child_bit is None:
-                    child_bit = 0
-                    new_log_pw = _child_log_pw(node, child_bit)
-
-                other_child_log_pw = _child_log_pw(node, 1 - child_bit)
-                childrens_log_p = (new_log_pw + other_child_log_pw +
-                        log_p_uncovered)
-                new_log_pw = _avg_log_p(log_p_estim, childrens_log_p)
-
-        return math.exp(new_log_pw - self.root.log_pw)
+        log_pw = self.root.log_pw
+        self._see_generated_bit(1)
+        new_log_pw = self.root.log_pw
+        self._revert_bit()
+        return math.exp(new_log_pw - log_pw)
 
     def _get_context(self):
         """Returns the recent context.
@@ -201,6 +175,20 @@ class _Node:
         self.counts = [0, 0]
         self.children = [None, None]
 
+    def recalculate_pw(self):
+        """Recalculates the weighted probability
+        based on the p_estim and the probability of children.
+        """
+        # No weighting is used, if the node has no children.
+        if self.children == NO_CHILDREN:
+            self.log_pw = self.log_p_estim
+        else:
+            log_p0context = _child_log_pw(self, 0)
+            log_p1context = _child_log_pw(self, 1)
+            childrens_log_p = (log_p0context + log_p1context +
+                    self.log_p_uncovered)
+            self.log_pw = _avg_log_p(self.log_p_estim, childrens_log_p)
+
     def __repr__(self):
         return "Node" + str(dict(
             log_p_estim=self.log_p_estim,
@@ -237,4 +225,14 @@ def _kt_estim_update(new_bit, counts):
     for the the Krichevski-Trofimov estimator.
     """
     return math.log((counts[new_bit] + 0.5) / float((sum(counts) + 1)))
+
+def _recalculate_log_p_estim(counts, estim_update):
+    log_p_estim = LOG_ONE
+    new_counts = [0, 0]
+    for bit in [0, 1]:
+        for i in xrange(counts[bit]):
+            log_p_estim += estim_update(bit, new_counts)
+            new_counts[bit] += 1
+
+    return log_p_estim
 
