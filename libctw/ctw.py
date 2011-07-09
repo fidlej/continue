@@ -107,6 +107,13 @@ class _CtModel:
         self._revert_bit()
         return math.exp(new_log_pw - log_pw)
 
+    def revert_generated(self, num_bits):
+        for i in xrange(num_bits):
+            self._revert_bit()
+
+    def revert_added(self, num_bits):
+        del self.history[-num_bits:]
+
     def _get_context(self):
         """Returns the recent context.
         """

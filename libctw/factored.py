@@ -37,3 +37,13 @@ class _Factored:
         self.offset = 0
         for ct in self.cts:
             ct.switch_history()
+
+    def revert_generated(self, num_bits):
+        for ignored in xrange(num_bits):
+            self.offset = (self.offset - 1) % len(self.cts)
+            for i, ct in enumerate(self.cts):
+                if i == self.offset:
+                    ct.revert_generated(1)
+                else:
+                    ct.revert_added(1)
+
