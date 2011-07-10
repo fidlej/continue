@@ -10,15 +10,20 @@ http://lessoned.blogspot.com/2011/06/bayesian-sequence-predictor.html
 """
 
 import math
-from libctw import formatting
+from libctw import formatting, extracting
 
 def create_model(deterministic=False, max_depth=None):
+    extractor = extracting.SuffixExtractor(max_depth)
+    return create_context_based_model(extractor, deterministic=deterministic)
+
+
+def create_context_based_model(context_extractor, deterministic=False):
     if deterministic:
         estim_update = _determ_estim_update
     else:
         estim_update = _kt_estim_update
 
-    return _CtModel(estim_update, max_depth)
+    return _CtModel(estim_update, context_extractor)
 
 
 NO_CHILDREN = [None, None]
@@ -31,11 +36,11 @@ class ImpossibleHistoryError(Exception):
 
 
 class _CtModel:
-    def __init__(self, estim_update, max_depth=None):
+    def __init__(self, estim_update, context_extractor):
         """Creates a Context Tree model.
         """
         self.estim_update = estim_update
-        self.max_depth = max_depth
+        self.extractor = context_extractor
         self.history = []
         self.root = _Node()
 
@@ -59,8 +64,6 @@ class _CtModel:
         The bits are outside of the model scope.
         The P(bits) is not bound to this model.
         """
-        # Note that it is enough to keep just the last
-        # max_depth bits of history.
         self.history += bits
 
     def _see_generated_bit(self, bit):
@@ -130,11 +133,7 @@ class _CtModel:
     def _get_context(self):
         """Returns the recent context.
         """
-        context = self.history
-        if self.max_depth is not None and len(context) > self.max_depth:
-            context = context[len(context) - self.max_depth:]
-            assert len(context) == self.max_depth
-        return context
+        return self.extractor.extract_context(self.history)
 
     def get_history_log_p(self):
         """Returns the log(probability) of the whole history.
