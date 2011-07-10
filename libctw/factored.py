@@ -9,6 +9,14 @@ def create_model(deterministic=False, max_depth=None, num_factors=8):
     return _Factored(cts)
 
 
+def create_factored_model(bit_models):
+    """Creates a factored model.
+    Bits on different positions will be predicted
+    by different models.
+    """
+    return _Factored(bit_models)
+
+
 class _Factored:
     def __init__(self, cts):
         self.cts = cts
