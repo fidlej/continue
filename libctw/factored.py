@@ -28,8 +28,6 @@ class _Factored:
         for ct in self.cts:
             ct.see_added(bits)
 
-        self.offset = (self.offset + len(bits)) % len(self.cts)
-
     def predict_one(self):
         return self.cts[self.offset].predict_one()
 
@@ -46,4 +44,3 @@ class _Factored:
                     ct.revert_generated(1)
                 else:
                     ct.revert_added(1)
-
