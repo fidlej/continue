@@ -4,6 +4,9 @@ The code is inspired by the CTW implementation for MC-AIXI:
 "A Monte-Carlo AIXI Approximation"
 Joel Veness, Kee Siong Ng, Marcus Hutter, William Uther, David Silver
 http://jveness.info/software/default.html
+
+I provide a high-level explanation of CTW here:
+http://lessoned.blogspot.com/2011/06/bayesian-sequence-predictor.html
 """
 
 import math
