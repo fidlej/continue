@@ -10,6 +10,7 @@ with P = 0.052825
 
 import sys
 import optparse
+import logging
 
 from libctw import modeling, byting, formatting
 from libctw.anycontext import creating
@@ -18,6 +19,7 @@ DEFAULTS = {
         "num_predicted_bits": 100,
         "estimator": "kt",
         "train": [],
+        "verbose": 0,
         }
 
 def _parse_args():
@@ -36,9 +38,12 @@ def _parse_args():
             help="take training sequences from the file")
     parser.add_option("-g", "--gain", action="store_true",
             help="use information gain for context selection")
+    parser.add_option("-v", "--verbose", action="count",
+            help="increase verbosity")
     parser.set_defaults(**DEFAULTS)
 
     options, args = parser.parse_args()
+    _set_logging(options.verbose)
     if len(args) != 1:
         parser.error("A sequence is expected.")
 
@@ -52,6 +57,11 @@ def _parse_args():
                     input.readlines()]
 
     return options, seq
+
+
+def _set_logging(verbosity):
+    level = max(logging.DEBUG, logging.WARNING - 10*verbosity)
+    logging.basicConfig(level=level)
 
 
 def _format_products(parts):

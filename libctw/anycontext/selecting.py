@@ -34,7 +34,7 @@ class _TreeBuilder:
 
         var_index, on_0, on_1 = _choose_split(self.history, positions,
                 var_indexes)
-        logging.info("best var at %s: %s", depth, var_index)
+        logging.debug("best var at %s: %s", depth, var_index)
         if var_index is None:
             return None
 
