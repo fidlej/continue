@@ -11,7 +11,8 @@ with P = 0.052825
 import sys
 import optparse
 
-from libctw import ctw, modeling, byting, factored, formatting
+from libctw import modeling, byting, formatting
+from libctw.anycontext import creating
 
 DEFAULTS = {
         "num_predicted_bits": 100,
@@ -33,6 +34,8 @@ def _parse_args():
             help="train the model on the given training sequence")
     parser.add_option("-f", "--file",
             help="take training sequences from the file")
+    parser.add_option("-g", "--gain", action="store_true",
+            help="use information gain for context selection")
     parser.set_defaults(**DEFAULTS)
 
     options, args = parser.parse_args()
@@ -62,28 +65,55 @@ def _round_up(value, base):
     return whole
 
 
-def main():
-    options, input_seq = _parse_args()
-    deterministic = options.estimator == "determ"
+def _create_history(options, input_seq):
     if options.bytes:
         seq = byting.to_binseq(input_seq)
-        num_predicted_bits = _round_up(options.num_predicted_bits, 8)
-        model = factored.create_model(deterministic, options.depth,
-                num_factors=8)
     else:
         seq = input_seq
-        num_predicted_bits = options.num_predicted_bits
-        model = ctw.create_model(deterministic, options.depth)
+    return formatting.to_bits(seq)
+
+
+def _create_model(options, history):
+    deterministic = options.estimator == "determ"
+    if options.bytes:
+        factored = True
+        historian = creating.Historian(history, 8, 0)
+    else:
+        factored = False
+        historian = creating.Historian(history, 1, 0)
+
+    if options.gain:
+        min_var_index = None
+    else:
+        min_var_index = creating.SUFFIXES_ONLY
+
+    model = creating.create_model(historian,
+            factored=factored,
+            deterministic=deterministic,
+            max_depth=options.depth,
+            min_var_index=min_var_index)
 
     if options.train:
         modeling.train_model(model, options.train, options.bytes)
 
-    model.see_generated(formatting.to_bits(seq))
+    model.see_generated(history)
+    return model
+
+
+def main():
+    options, input_seq = _parse_args()
+    history = _create_history(options, input_seq)
+    model = _create_model(options, history)
+
+    if options.bytes:
+        num_predicted_bits = _round_up(options.num_predicted_bits, 8)
+    else:
+        num_predicted_bits = options.num_predicted_bits
 
     probs = []
     bits = ""
     probability = 1.0
-    sys.stdout.write("%s -> " % seq)
+    sys.stdout.write("%s -> " % formatting.to_seq(history))
     for i in xrange(num_predicted_bits):
         bit, bit_p = modeling.advance(model)
         probs.append(bit_p)
