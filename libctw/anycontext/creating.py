@@ -6,7 +6,7 @@ from libctw.anycontext import selecting
 SUFFIXES_ONLY = 0
 
 def create_model(historian, factored=False, deterministic=False,
-        max_depth=None, min_var_index=SUFFIXES_ONLY):
+        max_depth=None, min_var_index=None):
     if factored:
         factors = []
         for positions in historian.get_factored_positions():
@@ -62,6 +62,20 @@ class Historian:
 
             on_factors.append(positions)
         return on_factors
+
+    def get_steps(self):
+        """Returns (generated, added) bits for each step.
+        """
+        steps = []
+        for start in self._get_step_starts():
+            generated_end = start + self.num_generated_bits
+            added_start = generated_end
+            added_end = added_start + self.num_added_bits
+            generated = self.history[start:generated_end]
+            added = self.history[added_start:added_end]
+            steps.append((generated, added))
+
+        return steps
 
     def _get_step_starts(self, offset=0):
         step_len = self.num_generated_bits + self.num_added_bits
