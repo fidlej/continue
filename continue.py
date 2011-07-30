@@ -18,7 +18,6 @@ from libctw.anycontext import creating
 DEFAULTS = {
         "num_predicted_bits": 100,
         "estimator": "kt",
-        "train": [],
         "verbose": 0,
         }
 
@@ -32,10 +31,6 @@ def _parse_args():
             help="use Krichevski-Trofimov or deterministic prior [kt|determ] (default=%(estimator)s)" % DEFAULTS)
     parser.add_option("-b", "--bytes", action="store_true",
             help="accept and predict a sequence of bytes")
-    parser.add_option("-t", "--train", action="append",
-            help="train the model on the given training sequence")
-    parser.add_option("-f", "--file",
-            help="take training sequences from the file")
     parser.add_option("-g", "--gain", action="store_true",
             help="use information gain for context selection")
     parser.add_option("-v", "--verbose", action="count",
@@ -50,11 +45,6 @@ def _parse_args():
     seq = args[0]
     if not options.bytes and len(seq.strip("01")) > 0:
         parser.error("Expecting a sequence of 0s and 1s.")
-
-    if options.file:
-        with open(options.file) as input:
-            options.train += [line.rstrip("\n\r") for line in
-                    input.readlines()]
 
     return options, seq
 
@@ -102,9 +92,6 @@ def _create_model(options, history):
             deterministic=deterministic,
             max_depth=options.depth,
             min_var_index=min_var_index)
-
-    if options.train:
-        modeling.train_model(model, options.train, options.bytes)
 
     model.see_generated(history)
     return model
