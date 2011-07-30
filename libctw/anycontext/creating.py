@@ -1,18 +1,32 @@
 
 from libctw import ctw, extracting
+from libctw import factored as _factored
 from libctw.anycontext import selecting
 
 SUFFIXES_ONLY = 0
 
 def create_model(historian, factored=False, deterministic=False,
         max_depth=None, min_var_index=SUFFIXES_ONLY):
-    assert factored == False
-    #TODO: Support also a factored model.
-    #TODO: Allow to specify select_vartree() limits.
+    if factored:
+        factors = []
+        for positions in historian.get_factored_positions():
+            root_var = selecting.select_vartree(
+                    historian.get_history(),
+                    positions,
+                    min_index=min_var_index)
+            factors.append(_create_factor(root_var, deterministic, max_depth))
 
-    root_var = selecting.select_vartree(historian.get_history(),
-            historian.get_generated_positions(),
-            min_index=min_var_index)
+        return _factored.create_factored_model(factors)
+    else:
+        positions = historian.get_generated_positions()
+        root_var = selecting.select_vartree(
+                historian.get_history(),
+                positions,
+                min_index=min_var_index)
+        return _create_factor(root_var, deterministic, max_depth)
+
+
+def _create_factor(root_var, deterministic, max_depth):
     extractor = extracting.VarExtractor(root_var, max_depth)
     return ctw.create_context_based_model(extractor,
             deterministic=deterministic)
@@ -28,7 +42,6 @@ class Historian:
         self.history = history
         self.num_generated_bits = num_generated_bits
         self.num_added_bits = num_added_bits
-        self.generated_shift = 0
 
     def get_history(self):
         return self.history
@@ -39,6 +52,16 @@ class Historian:
             for i in xrange(self.num_generated_bits):
                 positions.append(start + i)
         return positions
+
+    def get_factored_positions(self):
+        on_factors = []
+        for i in xrange(self.num_generated_bits):
+            positions = []
+            for start in self._get_step_starts(offset=i):
+                positions.append(start)
+
+            on_factors.append(positions)
+        return on_factors
 
     def _get_step_starts(self, offset=0):
         step_len = self.num_generated_bits + self.num_added_bits

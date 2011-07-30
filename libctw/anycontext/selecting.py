@@ -4,7 +4,7 @@ import logging
 
 from libctw import extracting
 
-def select_vartree(history, positions, min_index=None, max_depth=3):
+def select_vartree(history, positions, min_index=None, vartree_max_depth=3):
     """Returns a tree of vars.
     The selected vars should be helpful in classifying
     the bits on the given positions.
@@ -19,7 +19,7 @@ def select_vartree(history, positions, min_index=None, max_depth=3):
 
     var_indexes = range(-1, min_index - 1, -1)
     logging.info("building tree for factor %s", positions[0])
-    return _TreeBuilder(history, max_depth).build_tree(
+    return _TreeBuilder(history, vartree_max_depth).build_tree(
             positions, var_indexes)
 
 
@@ -34,7 +34,8 @@ class _TreeBuilder:
 
         var_index, on_0, on_1 = _choose_split(self.history, positions,
                 var_indexes)
-        logging.debug("best var at %s: %s", depth, var_index)
+        if var_index != -(depth + 1):
+            logging.debug("best var at %s: %s", depth, var_index)
         if var_index is None:
             return None
 
