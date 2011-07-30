@@ -4,7 +4,7 @@ import logging
 
 from libctw import extracting
 
-def select_vartree(history, positions, min_index=None, max_depth=None):
+def select_vartree(history, positions, min_index=None, max_depth=3):
     """Returns a tree of vars.
     The selected vars should be helpful in classifying
     the bits on the given positions.
