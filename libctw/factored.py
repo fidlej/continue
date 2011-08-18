@@ -52,3 +52,7 @@ class _Factored:
                     ct.revert_generated(1)
                 else:
                     ct.revert_added(1)
+
+    def get_history_log_p(self):
+        return sum(ct.get_history_log_p() for ct in self.cts)
+
