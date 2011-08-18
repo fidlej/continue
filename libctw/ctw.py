@@ -32,6 +32,16 @@ LOG_ONE_HALF = math.log(0.5)
 LOG_ZERO = float("-inf")
 
 
+class ImpossibleHistoryError(Exception):
+    def __init__(self, history):
+        self.history = history
+        Exception.__init__(self)
+
+    def __str__(self):
+        return ("Impossible history. Try non-deterministic prior. " +
+                "History: %s" % formatting.to_seq(self.history))
+
+
 class _CtModel:
     def __init__(self, estim_update, context_extractor):
         """Creates a Context Tree model.
@@ -84,6 +94,12 @@ class _CtModel:
             node.recalculate_pw()
 
         self.history.append(bit)
+        self._check_immpossible_history()
+
+    def _check_immpossible_history(self):
+        log_pw = self.root.log_pw
+        if math.isnan(log_pw) or math.isinf(log_pw):
+            raise ImpossibleHistoryError(self.history)
 
     def _revert_bit(self):
         bit = self.history.pop(-1)
@@ -106,12 +122,14 @@ class _CtModel:
         P(Next_bit=1|history).
         """
         log_pw = self.root.log_pw
-        self._see_generated_bit(1)
+        try:
+            self._see_generated_bit(1)
+        except ImpossibleHistoryError:
+            self._revert_bit()
+            return 0.0
+
         new_log_pw = self.root.log_pw
         self._revert_bit()
-
-        if math.isnan(new_log_pw):
-            return 0.0
         return math.exp(new_log_pw - log_pw)
 
     def revert_generated(self, num_bits):

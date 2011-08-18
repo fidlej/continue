@@ -44,5 +44,10 @@ def test_invalid_history():
     model.switch_history()
 
     model.see_generated([0, 1])
-    model.see_generated([0])
-    assert math.isnan(model.get_history_log_p())
+    try:
+        model.see_generated([0])
+        assert False, "ImpossibleHistoryError is expected"
+    except ctw.ImpossibleHistoryError, e:
+        assert str(e).startswith(
+                "Impossible history. Try non-deterministic prior.")
+
