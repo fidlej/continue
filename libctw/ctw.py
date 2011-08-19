@@ -137,7 +137,8 @@ class _CtModel:
             self._revert_bit()
 
     def revert_added(self, num_bits):
-        del self.history[-num_bits:]
+        if num_bits > 0:
+            del self.history[-num_bits:]
 
     def _get_context(self):
         """Returns the recent context.
