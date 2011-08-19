@@ -25,12 +25,15 @@ class _Factored:
     def see_generated(self, bits):
         for bit in bits:
             for i, ct in enumerate(self.cts):
-                if i == self.offset:
-                    ct.see_generated([bit])
-                else:
+                if i != self.offset:
                     ct.see_added([bit])
 
-            self.offset = (self.offset + 1) % len(self.cts)
+            try:
+                self.cts[self.offset].see_generated([bit])
+            except ctw.ImpossibleHistoryError:
+                raise
+            finally:
+                self.offset = (self.offset + 1) % len(self.cts)
 
     def see_added(self, bits):
         for ct in self.cts:
