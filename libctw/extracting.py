@@ -20,7 +20,7 @@ class VarExtractor:
     """
     def __init__(self, root_var, max_depth=None):
         self.root_var = root_var
-        self.max_depth = max_depth
+        self.suffix_extractor = SuffixExtractor(max_depth)
         #TODO: assert that the depth of the vars isn't bigger that max_depth
 
     def extract_context(self, history):
@@ -43,19 +43,16 @@ class VarExtractor:
         return self._get_unused_suffix(history, used_indexes) + context
 
     def _get_unused_suffix(self, history, used_indexes):
-        context = list(history)
-        used_indexes.sort()
-        for index in used_indexes:
-            del context[index]
-
-        if self.max_depth is None:
-            return context
-
-        max_depth = self.max_depth - len(used_indexes)
-        if len(context) <= max_depth:
-            return context
-
-        return context[-max_depth:]
+        context = self.suffix_extractor.extract_context(history)
+        if used_indexes:
+            context = context[:]
+            used_indexes.sort()
+            for index in used_indexes:
+                if -index < len(context):
+                    del context[index]
+                else:
+                    del context[0]
+        return context
 
 
 class Var:
