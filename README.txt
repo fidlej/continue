@@ -8,7 +8,7 @@ Usage example:
 The Context-Tree Weighting (CTW) algorithm is used for the prediction.
 The CTW prediction is optimal, if the next sequence bit depends
 only on the sequence suffix.
-Note that CTW is encumbranced by patents.
+Note that CTW is encumbered by patents.
 
 
 Credits
