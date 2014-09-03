@@ -46,7 +46,7 @@ def main():
         n_seqs += 1
         print n_seqs, cost_bits
 
-    print "avg cost: %s" % (total_bits / n_seqs)
+    print "avg cost: %s bits" % (total_bits / n_seqs)
 
 
 if __name__ == "__main__":
